@@ -20,7 +20,13 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Warranty Vault to access your photos to attach receipts."
+        }
+      ]
     ],
     "extra": {
       "router": {
@@ -33,6 +39,9 @@
     "owner": "nomanux",
     "updates": {
       "url": "https://u.expo.dev/ab0ce906-7d6b-4b2c-9809-1b44ba5c08af"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
