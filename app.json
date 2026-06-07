@@ -18,6 +18,15 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ab0ce906-7d6b-4b2c-9809-1b44ba5c08af"
+      }
+    },
+    "owner": "nomanux"
   }
 }
