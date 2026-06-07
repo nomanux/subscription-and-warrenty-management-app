@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,6 +22,24 @@ const paperSettings = {
  *  - PaperProvider: Material theme + components
  */
 export default function RootLayout() {
+  // On every launch, silently fetch the latest over-the-air update and reload
+  // if one is available — so the user just opens the app and it's up to date.
+  useEffect(() => {
+    async function checkForUpdates() {
+      try {
+        if (!Updates.isEnabled) return;
+        const result = await Updates.checkForUpdateAsync();
+        if (result.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch {
+        // Ignore update errors — the app keeps working with its current version.
+      }
+    }
+    checkForUpdates();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
