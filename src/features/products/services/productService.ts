@@ -1,56 +1,64 @@
-import { getItem, setItem } from '@/lib/storage';
-import { generateId } from '@/lib/id';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  setDoc,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { calculateExpiryDate, computeStatus } from '@/features/products/utils';
 import type { Product, ProductInput, ProductSource } from '@/features/products/types';
 
 /**
- * Product service — local-only implementation (AsyncStorage).
+ * Product service — Cloud Firestore implementation.
  *
- * This is the app's data layer for products. Screens and hooks call ONLY these
- * functions and never touch storage directly. The async signatures intentionally
- * match a future Firestore implementation, so swapping to the cloud later means
- * rewriting just this file.
+ * Data lives in the `products` collection and syncs across devices. Dates are
+ * stored as ISO strings (matching the Product type), so no Timestamp mapping
+ * is needed. Status is recomputed on read so it stays current.
+ *
+ * Note: there is no per-user scoping yet (auth comes later) — every device
+ * shares the same `products` collection. We'll add `userId` filtering when we
+ * wire authentication.
  */
 
-const PRODUCTS_KEY = 'wv:products';
+const COLLECTION = 'products';
 
-/** Read all products, recomputing status so it reflects the current date. */
-async function readAll(): Promise<Product[]> {
-  const products = (await getItem<Product[]>(PRODUCTS_KEY)) ?? [];
-  return products.map((product) => ({
-    ...product,
-    status: computeStatus(product.expiryDate),
-  }));
-}
-
-async function writeAll(products: Product[]): Promise<void> {
-  await setItem(PRODUCTS_KEY, products);
+/** Recompute status from expiry so it reflects the current date. */
+function withFreshStatus(product: Product): Product {
+  return { ...product, status: computeStatus(product.expiryDate) };
 }
 
 /** All products, newest first. */
 export async function getProducts(): Promise<Product[]> {
-  const products = await readAll();
-  return products.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) =>
+    withFreshStatus({ ...(d.data() as Product), id: d.id }),
+  );
 }
 
 /** A single product by id, or null if not found. */
 export async function getProduct(id: string): Promise<Product | null> {
-  const products = await readAll();
-  return products.find((product) => product.id === id) ?? null;
+  const snapshot = await getDoc(doc(db, COLLECTION, id));
+  if (!snapshot.exists()) return null;
+  return withFreshStatus({ ...(snapshot.data() as Product), id: snapshot.id });
 }
 
-/** Create a product from form input; derives id, expiry, status, timestamps. */
+/** Create a product; derives id, expiry, status, timestamps. */
 export async function createProduct(
   input: ProductInput,
   source: ProductSource = 'manual',
 ): Promise<Product> {
-  const products = await readAll();
+  const ref = doc(collection(db, COLLECTION));
   const now = new Date().toISOString();
   const expiryDate = calculateExpiryDate(input.purchaseDate, input.warrantyDurationMonths);
 
   const product: Product = {
     ...input,
-    id: generateId(),
+    id: ref.id,
     expiryDate,
     status: computeStatus(expiryDate),
     source,
@@ -58,22 +66,21 @@ export async function createProduct(
     updatedAt: now,
   };
 
-  await writeAll([product, ...products]);
+  await setDoc(ref, product);
   return product;
 }
 
-/** Update an existing product; recomputes expiry/status from merged values. */
+/** Update a product; recomputes expiry/status from merged values. */
 export async function updateProduct(
   id: string,
   changes: Partial<ProductInput>,
 ): Promise<Product> {
-  const products = await readAll();
-  const index = products.findIndex((product) => product.id === id);
-  if (index === -1) {
+  const existing = await getProduct(id);
+  if (!existing) {
     throw new Error(`Product "${id}" not found`);
   }
 
-  const merged = { ...products[index], ...changes };
+  const merged = { ...existing, ...changes };
   const expiryDate = calculateExpiryDate(merged.purchaseDate, merged.warrantyDurationMonths);
 
   const updated: Product = {
@@ -83,13 +90,11 @@ export async function updateProduct(
     updatedAt: new Date().toISOString(),
   };
 
-  products[index] = updated;
-  await writeAll(products);
+  await setDoc(doc(db, COLLECTION, id), updated);
   return updated;
 }
 
 /** Permanently remove a product. */
 export async function deleteProduct(id: string): Promise<void> {
-  const products = await readAll();
-  await writeAll(products.filter((product) => product.id !== id));
+  await deleteDoc(doc(db, COLLECTION, id));
 }

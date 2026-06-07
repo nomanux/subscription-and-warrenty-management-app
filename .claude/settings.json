@@ -53,7 +53,10 @@
       "Bash(EXPO_TOKEN=\"YvaMTveZUk7oab9iK5GZ3hwaqBylf074oW_B0feq\" npx eas-cli build --platform android --profile preview --non-interactive --no-wait)",
       "Bash(EXPO_TOKEN=\"YvaMTveZUk7oab9iK5GZ3hwaqBylf074oW_B0feq\" npx eas-cli build:view 2c5131df-9bbf-4d41-b941-9a9ea888802c)",
       "Bash(EXPO_TOKEN=\"YvaMTveZUk7oab9iK5GZ3hwaqBylf074oW_B0feq\" npx eas-cli update:configure --platform android --non-interactive)",
-      "Bash(git commit -q -m 'feat: configure EAS Update \\(OTA\\) with preview channel *)"
+      "Bash(git commit -q -m 'feat: configure EAS Update \\(OTA\\) with preview channel *)",
+      "Bash(timeout 40 node test-firestore.mjs)",
+      "Bash(curl -s \"https://firestore.googleapis.com/v1/projects/warrenty-management-b9396/databases/\\(default\\)/documents/products?key=AIzaSyAzmczKi0j_yOA5QrIT5DFkBi8CIgeveBU&pageSize=1\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://firestore.googleapis.com/v1/projects/warrenty-management-b9396/databases/\\(default\\)/documents/products?key=AIzaSyAzmczKi0j_yOA5QrIT5DFkBi8CIgeveBU&pageSize=1\")"
     ]
   }
 }
