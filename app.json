@@ -11,7 +11,10 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.warrantyvault.app"
+      "package": "com.warrantyvault.app",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "bundler": "metro"
@@ -27,6 +30,9 @@
         "projectId": "ab0ce906-7d6b-4b2c-9809-1b44ba5c08af"
       }
     },
-    "owner": "nomanux"
+    "owner": "nomanux",
+    "updates": {
+      "url": "https://u.expo.dev/ab0ce906-7d6b-4b2c-9809-1b44ba5c08af"
+    }
   }
 }
