@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Warranty Vault",
+    "slug": "warranty-vault",
+    "scheme": "warrantyvault",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.warrantyvault.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
