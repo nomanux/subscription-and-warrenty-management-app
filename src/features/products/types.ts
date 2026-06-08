@@ -28,7 +28,7 @@ export type ProductSource = 'manual' | 'ai';
 
 /**
  * A receipt attached to a product.
- * `uri` is a local file-system path now (file://...), later a Cloudinary URL.
+ * `uri` is local-only: a file URI on native or a data URI/blob URI on web.
  */
 export interface ReceiptFile {
   uri: string;

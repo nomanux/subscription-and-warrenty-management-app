@@ -59,6 +59,6 @@ function createAuth(): Auth {
 const auth: Auth = createAuth();
 const db: Firestore = getFirestore(app);
 
-// Note: file storage is handled by Cloudinary (see src/lib/cloudinary.ts),
-// not Firebase Storage. Firebase here provides Auth + Firestore only.
+// Note: receipt images are stored locally on the device/browser.
+// Firebase here provides Auth + Firestore only.
 export { app, auth, db };

@@ -3,7 +3,7 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Chip, Dialog, Portal, Text, TextInput } from 'react-native-paper';
 import { useCreateProduct, useUpdateProduct } from '@/features/products/hooks/useProducts';
-import { uploadReceiptImage } from '@/features/receipts/services/cloudinaryService';
+import { saveReceiptImageLocally } from '@/features/receipts/services/localReceiptService';
 import {
   CATEGORIES,
   type Category,
@@ -35,7 +35,7 @@ export function ProductForm({ visible, initial, onDismiss }: ProductFormProps) {
   const [months, setMonths] = useState('12');
   const [receipt, setReceipt] = useState<ReceiptFile | null>(null);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [savingReceipt, setSavingReceipt] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Reset/prefill fields whenever the dialog opens.
@@ -61,9 +61,15 @@ export function ProductForm({ visible, initial, onDismiss }: ProductFormProps) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.7,
+      base64: true,
     });
     if (!result.canceled && result.assets[0]) {
-      setLocalImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      if (asset.base64 && asset.mimeType) {
+        setLocalImageUri(`data:${asset.mimeType};base64,${asset.base64}`);
+      } else {
+        setLocalImageUri(asset.uri);
+      }
     }
   }
 
@@ -73,14 +79,14 @@ export function ProductForm({ visible, initial, onDismiss }: ProductFormProps) {
     try {
       let finalReceipt = receipt;
       if (localImageUri) {
-        setUploading(true);
-        const uploaded = await uploadReceiptImage(localImageUri);
+        setSavingReceipt(true);
+        const savedReceipt = await saveReceiptImageLocally(localImageUri);
         finalReceipt = {
-          uri: uploaded.secureUrl,
+          uri: savedReceipt.uri,
           fileType: 'image',
-          thumbnailUri: uploaded.secureUrl,
+          thumbnailUri: savedReceipt.uri,
         };
-        setUploading(false);
+        setSavingReceipt(false);
       }
 
       const input = {
@@ -102,13 +108,13 @@ export function ProductForm({ visible, initial, onDismiss }: ProductFormProps) {
       }
       onDismiss();
     } catch (e) {
-      setUploading(false);
+      setSavingReceipt(false);
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     }
   }
 
   const previewUri = localImageUri ?? receipt?.uri ?? null;
-  const saving = createProduct.isPending || updateProduct.isPending || uploading;
+  const saving = createProduct.isPending || updateProduct.isPending || savingReceipt;
 
   return (
     <Portal>
@@ -187,7 +193,7 @@ export function ProductForm({ visible, initial, onDismiss }: ProductFormProps) {
             loading={saving}
             disabled={!name.trim() || saving}
           >
-            {uploading ? 'Uploading…' : 'Save'}
+            {savingReceipt ? 'Saving image…' : 'Save'}
           </Button>
         </Dialog.Actions>
       </Dialog>
