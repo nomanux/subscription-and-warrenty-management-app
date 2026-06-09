@@ -6,6 +6,7 @@ library;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_twind/flutter_twind.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -32,11 +33,13 @@ class WarrantyVaultApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Warranty Vault',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
-      home: const HomeShell(),
+    return ProviderScope(
+      child: MaterialApp(
+        title: 'Warranty Vault',
+        debugShowCheckedModeBanner: false,
+        theme: buildAppTheme(),
+        home: const HomeShell(),
+      ),
     );
   }
 }

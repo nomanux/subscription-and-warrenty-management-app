@@ -19,15 +19,20 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   bool _exporting = false;
 
   Future<void> _exportData() async {
-    final db = ref.read(appDatabaseProvider);
-    final service = BackupService(db);
-
-    setState(() => _exporting = true);
     try {
+      setState(() => _exporting = true);
+      _showSuccess('Starting export...');
+
+      final db = ref.read(appDatabaseProvider);
+      final service = BackupService(db);
+
       final filePath = await service.exportToCSV();
       if (!mounted) return;
-      _showSuccess('CSV saved to: $filePath');
-    } catch (e) {
+      _showSuccess('✓ CSV saved to: $filePath');
+    } catch (e, st) {
+      if (!mounted) return;
+      print('Export error: $e');
+      print('Stack: $st');
       _showError('Export failed: $e');
     } finally {
       if (mounted) setState(() => _exporting = false);
