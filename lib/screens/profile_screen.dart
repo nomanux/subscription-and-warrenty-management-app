@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../features/backup/presentation/screens/backup_screen.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -86,7 +87,10 @@ class ProfileScreen extends StatelessWidget {
                   icon: HugeIcons.strokeRoundedCloudUpload,
                   title: 'Backup & Restore',
                   subtitle: 'Google Drive',
-                  onTap: () => _comingSoon(context, 'Google Drive backup'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BackupScreen()),
+                  ),
                 ),
                 _SettingTile(
                   icon: HugeIcons.strokeRoundedNotification01,

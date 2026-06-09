@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../features/backup/presentation/screens/backup_screen.dart';
 import '../theme.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -93,8 +94,11 @@ class AppDrawer extends StatelessWidget {
             selected: false,
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Google Drive backup is coming soon.')));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const BackupScreen()),
+              );
             },
           ),
           _NavTile(

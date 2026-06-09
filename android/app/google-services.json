@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "916872583271",
+    "firebase_url": "https://warrenty-management-b9396-default-rtdb.firebaseio.com",
+    "project_id": "warrenty-management-b9396",
+    "storage_bucket": "warrenty-management-b9396.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916872583271:android:81e74c84ed95e0bc2adcc2",
+        "android_client_info": {
+          "package_name": "com.warrantyvault.warranty_vault"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwNPHO-pgWSrZDXn60_ZN01OF5Jo28Kso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
