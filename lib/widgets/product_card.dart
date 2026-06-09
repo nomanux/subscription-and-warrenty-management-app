@@ -46,13 +46,13 @@ class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,
     required this.product,
-    this.onEdit,
-    this.onDelete,
+    this.onTap,
   });
 
   final Product product;
-  final void Function(Product product)? onEdit;
-  final void Function(String id)? onDelete;
+
+  /// Tapping the card (e.g. to open the detail page).
+  final VoidCallback? onTap;
 
   /// Fraction of the warranty period still remaining (0..1).
   double get _remainingFraction {
@@ -79,7 +79,6 @@ class ProductCard extends StatelessWidget {
         ? '${product.brand} · ${product.category}'
         : product.category;
     final thumb = product.receipt?.thumbnailUri ?? product.receipt?.uri;
-    final hasMenu = onEdit != null || onDelete != null;
 
     final card = WContainer(
       className: 'bg-white rounded-[18px] shadow-md p-4',
@@ -127,43 +126,35 @@ class ProductCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              WContainer(
-                className:
-                    '${_rgbaClass('bg', color, 0.12)} rounded-full px-3 py-1',
-                child: WText(pillLabel,
-                    color: color, fontSize: 12, className: 'font-semibold'),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  pillLabel,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               _ProgressBar(fraction: _remainingFraction, color: color),
             ],
           ),
-          if (hasMenu)
-            PopupMenuButton<String>(
-              icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedMoreVertical,
-                  color: kMuted,
-                  size: 18),
-              padding: EdgeInsets.zero,
-              onSelected: (v) {
-                if (v == 'edit') onEdit?.call(product);
-                if (v == 'delete') onDelete?.call(product.id);
-              },
-              itemBuilder: (_) => [
-                if (onEdit != null)
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                if (onDelete != null)
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-              ],
-            ),
         ],
       ),
     );
 
-    // Whole card taps to edit when editing is available.
-    if (onEdit != null) {
+    // Whole card is tappable (opens the detail page).
+    if (onTap != null) {
       return InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () => onEdit!(product),
+        onTap: onTap,
         child: card,
       );
     }

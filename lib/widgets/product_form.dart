@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/widgets/app_dropdown.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -151,6 +152,40 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete warranty?'),
+        content: Text(
+            'Permanently delete "${widget.initial!.productName}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626)),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _saving = true);
+    try {
+      await productService.deleteProduct(widget.initial!.id);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      setState(() {
+        _saving = false;
+        _error = e.toString();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final previewUri = _localImageUri ?? _receipt?.uri;
@@ -164,6 +199,17 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               icon: HugeIcons.strokeRoundedCancel01, color: kInk, size: 22),
         ),
         title: Text(_isEdit ? 'Edit Warranty' : 'Add Warranty'),
+        actions: [
+          if (_isEdit)
+            IconButton(
+              tooltip: 'Delete',
+              onPressed: _saving ? null : _delete,
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedDelete02,
+                  color: const Color(0xFFDC2626),
+                  size: 22),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -182,26 +228,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 hint: 'e.g. Samsung',
               ),
               _FieldLabel('Category'),
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                isExpanded: true,
-                borderRadius: BorderRadius.circular(14),
-                icon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowDown01,
-                    color: kMuted,
-                    size: 22),
-                decoration: const InputDecoration(
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                ),
-                style: const TextStyle(fontSize: 16, color: kInk),
-                items: kCategories
-                    .map((c) =>
-                        DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) setState(() => _category = v);
-                },
+              AppDropdown<String>(
+                value: _category,
+                title: 'Select category',
+                items: kCategories,
+                itemLabel: (c) => c,
+                onChanged: (v) => setState(() => _category = v),
               ),
               const SizedBox(height: 18),
               _FormField(

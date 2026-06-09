@@ -10,6 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_twind/flutter_twind.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'core/database/app_database.dart';
+import 'core/providers/app_providers.dart';
+import 'dev/seed_local.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/products_screen.dart';
@@ -24,8 +27,15 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // To re-seed demo data, import 'dev/seed_data.dart' and call seedProducts().
-  runApp(const WarrantyVaultApp());
+  // Open the local Drift DB once and seed demo data on first launch.
+  final db = AppDatabase();
+  await seedLocalIfEmpty(db);
+  runApp(
+    ProviderScope(
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
+      child: const WarrantyVaultApp(),
+    ),
+  );
 }
 
 class WarrantyVaultApp extends StatelessWidget {
@@ -33,13 +43,11 @@ class WarrantyVaultApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      child: MaterialApp(
-        title: 'Warranty Vault',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        home: const HomeShell(),
-      ),
+    return MaterialApp(
+      title: 'Warranty Vault',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
+      home: const HomeShell(),
     );
   }
 }

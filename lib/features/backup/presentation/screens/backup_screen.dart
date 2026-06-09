@@ -1,8 +1,10 @@
 /// Backup & Restore screen — export warranty data as CSV.
 library;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/providers/app_providers.dart';
 import '../../../../theme.dart';
@@ -17,22 +19,51 @@ class BackupScreen extends ConsumerStatefulWidget {
 
 class _BackupScreenState extends ConsumerState<BackupScreen> {
   bool _exporting = false;
+  bool _importing = false;
+
+  Future<void> _importData() async {
+    setState(() => _importing = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+      final path = result?.files.single.path;
+      if (path == null) return; // cancelled
+
+      final service = BackupService(ref.read(appDatabaseProvider));
+      await service.importFromCSV(path);
+      if (!mounted) return;
+      _showSuccess('✓ Imported warranties from CSV.');
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Import failed: $e');
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
+  }
 
   Future<void> _exportData() async {
+    setState(() => _exporting = true);
     try {
-      setState(() => _exporting = true);
-      _showSuccess('Starting export...');
+      // Need "All files access" to write to a visible shared folder.
+      var status = await Permission.manageExternalStorage.status;
+      if (!status.isGranted) {
+        status = await Permission.manageExternalStorage.request();
+      }
+      if (!status.isGranted) {
+        if (!mounted) return;
+        _showError('Enable "All files access" to save the export.');
+        await openAppSettings();
+        return;
+      }
 
-      final db = ref.read(appDatabaseProvider);
-      final service = BackupService(db);
-
+      final service = BackupService(ref.read(appDatabaseProvider));
       final filePath = await service.exportToCSV();
       if (!mounted) return;
-      _showSuccess('✓ CSV saved to: $filePath');
-    } catch (e, st) {
+      _showSuccess('✓ Saved to: $filePath');
+    } catch (e) {
       if (!mounted) return;
-      print('Export error: $e');
-      print('Stack: $st');
       _showError('Export failed: $e');
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -89,6 +120,44 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                         : const Icon(Icons.download),
                     label: Text(_exporting ? 'Exporting…' : 'Export to CSV'),
                     style: FilledButton.styleFrom(backgroundColor: kPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.upload_file, color: kPrimary, size: 24),
+                  const SizedBox(width: 12),
+                  const Text('Import Data from CSV',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kInk)),
+                ]),
+                const SizedBox(height: 8),
+                const Text(
+                  'Pick a CSV file (same format as the export) to add those '
+                  'warranties to your vault.',
+                  style: TextStyle(color: kMuted, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _importing ? null : _importData,
+                    icon: _importing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.upload_file),
+                    label: Text(_importing ? 'Importing…' : 'Import from CSV'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kPrimary,
+                      side: const BorderSide(color: kPrimary),
+                    ),
                   ),
                 ),
               ],

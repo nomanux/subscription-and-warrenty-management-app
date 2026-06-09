@@ -1,15 +1,14 @@
 /// CSV backup / restore for local warranty data.
 library;
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/notifications/notification_service.dart';
-
 
 class BackupService {
   BackupService(this._db);
@@ -28,7 +27,9 @@ class BackupService {
     final buffer = StringBuffer();
 
     // CSV header
-    buffer.writeln('Product Name,Category,Purchase Date,Warranty Months,Expiry Date,Store Name,Notes');
+    buffer.writeln(
+      'Product Name,Category,Purchase Date,Warranty Months,Expiry Date,Store Name,Notes',
+    );
 
     // Data rows
     for (final w in warranties) {
@@ -38,19 +39,39 @@ class BackupService {
       final notes = _escapeCsv(w.notes ?? '');
 
       buffer.writeln(
-        '$productName,$category,${w.purchaseDate.toIso8601String()},${ w.warrantyMonths},'
+        '$productName,$category,${w.purchaseDate.toIso8601String()},${w.warrantyMonths},'
         '${w.expiryDate.toIso8601String()},$storeName,$notes',
       );
     }
 
-    // Save to Downloads directory
-    final directory = await getApplicationDocumentsDirectory();
+    // Save into a visible "Warranty Management" folder in shared storage.
+    final directory = await _exportDir();
     final now = DateTime.now();
-    final filename = 'warranty_export_${now.year}-${_pad(now.month)}-${_pad(now.day)}.csv';
+    final filename =
+        'warranty_export_${now.year}-${_pad(now.month)}-${_pad(now.day)}'
+        '_${_pad(now.hour)}-${_pad(now.minute)}-${_pad(now.second)}.csv';
     final file = File('${directory.path}/$filename');
     await file.writeAsString(buffer.toString());
 
     return file.path;
+  }
+
+  /// Returns (creating if needed) the public "Warranty Management" folder.
+  ///
+  /// Climbs from the app-specific external dir to the storage root so we don't
+  /// hard-code "/storage/emulated/0".
+  Future<Directory> _exportDir() async {
+    var root = '/storage/emulated/0';
+    final ext = await getExternalStorageDirectory();
+    if (ext != null) {
+      final idx = ext.path.indexOf('/Android/');
+      if (idx != -1) root = ext.path.substring(0, idx);
+    }
+    final dir = Directory('$root/Warranty Management');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
   }
 
   // ── Import from CSV ────────────────────────────────────────────────────────
@@ -62,7 +83,10 @@ class BackupService {
     }
 
     final contents = await file.readAsString();
-    final lines = contents.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    final lines = contents
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty)
+        .toList();
 
     if (lines.length < 2) {
       throw Exception('CSV file is empty or invalid');
@@ -84,20 +108,22 @@ class BackupService {
           continue;
         }
 
-        await _db.into(_db.warranties).insert(
-          WarrantiesCompanion.insert(
-            id: 'warranty_${DateTime.now().millisecondsSinceEpoch}',
-            productName: fields[0],
-            category: fields[1],
-            purchaseDate: purchaseDate,
-            warrantyMonths: warrantyMonths,
-            expiryDate: expiryDate,
-            storeName: Value(fields[5].isEmpty ? null : fields[5]),
-            notes: Value(fields[6].isEmpty ? null : fields[6]),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        );
+        await _db
+            .into(_db.warranties)
+            .insert(
+              WarrantiesCompanion.insert(
+                id: const Uuid().v4(),
+                productName: fields[0],
+                category: fields[1],
+                purchaseDate: purchaseDate,
+                warrantyMonths: warrantyMonths,
+                expiryDate: expiryDate,
+                storeName: Value(fields[5].isEmpty ? null : fields[5]),
+                notes: Value(fields[6].isEmpty ? null : fields[6]),
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ),
+            );
       }
     });
 

@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.warrantyvault.warranty_vault"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

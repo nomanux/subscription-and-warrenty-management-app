@@ -10,9 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'models/product.dart';
 
 /// Brand colors — warm coral/orange (inspired by the EGOVERN reference).
-const Color kPrimary = Color(0xFFF15A2B);
-const Color kPrimaryDark = Color(0xFFD9481C);
-const Color kSecondary = Color(0xFFFB8C5A);
+const Color kPrimary = Color(0xFF11B082);
+const Color kPrimaryDark = Color(0xFF0C8C66);
+const Color kSecondary = Color(0xFF34C79D);
 
 /// Surfaces.
 const Color kBackground = Color(0xFFF6F8FB);
@@ -84,6 +84,8 @@ ThemeData buildAppTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFFF1F5F9),
+      // Lighter placeholder text.
+      hintStyle: const TextStyle(color: Color(0xFFB6BEC9), fontSize: 15),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,

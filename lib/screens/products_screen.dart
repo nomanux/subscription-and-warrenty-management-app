@@ -6,39 +6,16 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_twind/flutter_twind.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_form.dart';
+import 'product_detail_screen.dart';
 
 class ProductsScreen extends StatelessWidget {
   const ProductsScreen({super.key});
-
-  Future<void> _confirmDelete(BuildContext context, String id) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete warranty?'),
-        content: const Text('This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await productService.deleteProduct(id);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +23,11 @@ class ProductsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('My Warranties')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showProductForm(context),
-        icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedPlusSign, color: Colors.white),
-        label: const Text('Add'),
+        backgroundColor: kPrimary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       body: StreamBuilder<List<Product>>(
         stream: productService.watchProducts(),
@@ -77,8 +56,11 @@ class ProductsScreen extends StatelessWidget {
               final product = products[i];
               return ProductCard(
                 product: product,
-                onEdit: (p) => showProductForm(context, initial: p),
-                onDelete: (id) => _confirmDelete(context, id),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProductDetailScreen(initial: product),
+                  ),
+                ),
               );
             },
           );
