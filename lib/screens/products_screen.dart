@@ -14,8 +14,51 @@ import '../widgets/product_card.dart';
 import '../widgets/product_form.dart';
 import 'product_detail_screen.dart';
 
-class ProductsScreen extends StatelessWidget {
+class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
+
+  @override
+  State<ProductsScreen> createState() => _ProductsScreenState();
+}
+
+class _ProductsScreenState extends State<ProductsScreen> {
+  WarrantyStatus? selectedFilter;
+  String searchQuery = '';
+  String? expandedProductId;
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Product> _filterProducts(List<Product> products) {
+    var filtered = products;
+
+    // Apply status filter
+    if (selectedFilter != null) {
+      filtered = filtered.where((p) => p.status == selectedFilter).toList();
+    }
+
+    // Apply search filter
+    if (searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((p) =>
+              p.productName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              (p.brand?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false) ||
+              p.category.toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    }
+
+    return filtered;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,24 +88,68 @@ class ProductsScreen extends StatelessWidget {
             );
           }
           final products = snapshot.data ?? [];
+          final filteredProducts = _filterProducts(products);
+
           if (products.isEmpty) {
             return const _EmptyState();
           }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-            itemCount: products.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              final product = products[i];
-              return ProductCard(
-                product: product,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProductDetailScreen(initial: product),
+
+          return Column(
+            children: [
+              // Search bar - above filters
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => searchQuery = value),
+                  decoration: InputDecoration(
+                    hintText: 'Search warranties...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () {
+                              _searchController.clear();
+                              setState(() => searchQuery = '');
+                            },
+                            child: const Icon(Icons.close),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-              );
-            },
+              ),
+              _FilterBar(
+                selectedFilter: selectedFilter,
+                onFilterChanged: (filter) => setState(() => selectedFilter = filter),
+              ),
+              Expanded(
+                child: filteredProducts.isEmpty
+                    ? _NoResultsState(filter: selectedFilter, searchQuery: searchQuery)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                        itemCount: filteredProducts.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final product = filteredProducts[i];
+                          final isExpanded = expandedProductId == product.id;
+                          return ProductCard(
+                            product: product,
+                            isExpanded: isExpanded,
+                            onExpand: () => setState(() {
+                              expandedProductId = isExpanded ? null : product.id;
+                            }),
+                            onViewDetails: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProductDetailScreen(initial: product),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -88,6 +175,150 @@ class _EmptyState extends StatelessWidget {
             SizedBox(height: 4),
             WText(
               'Tap “Add” to track your first warranty.',
+              color: kMuted,
+              fontSize: 14,
+              className: 'text-center',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
+
+  final WarrantyStatus? selectedFilter;
+  final Function(WarrantyStatus?) onFilterChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _FilterChip(
+              label: 'All',
+              isSelected: selectedFilter == null,
+              onTap: () => onFilterChanged(null),
+            ),
+            const SizedBox(width: 8),
+            _FilterChip(
+              label: 'Active',
+              isSelected: selectedFilter == WarrantyStatus.active,
+              onTap: () => onFilterChanged(WarrantyStatus.active),
+              icon: '✓',
+            ),
+            const SizedBox(width: 8),
+            _FilterChip(
+              label: 'Expiring Soon',
+              isSelected: selectedFilter == WarrantyStatus.expiring,
+              onTap: () => onFilterChanged(WarrantyStatus.expiring),
+              icon: '⏰',
+            ),
+            const SizedBox(width: 8),
+            _FilterChip(
+              label: 'Expired',
+              isSelected: selectedFilter == WarrantyStatus.expired,
+              onTap: () => onFilterChanged(WarrantyStatus.expired),
+              icon: '✗',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final String? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            WText(icon!, fontSize: 14),
+            const SizedBox(width: 6),
+          ],
+          WText(label,
+              fontSize: 13,
+              color: isSelected ? Colors.white : kInk,
+              className: 'font-medium'),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (_) => onTap(),
+      backgroundColor: Colors.transparent,
+      selectedColor: kPrimary,
+      side: BorderSide(
+        color: isSelected ? kPrimary : const Color(0xFFD1D5DB),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+    );
+  }
+}
+
+class _NoResultsState extends StatelessWidget {
+  const _NoResultsState({required this.filter, this.searchQuery = ''});
+
+  final WarrantyStatus? filter;
+  final String searchQuery;
+
+  String get _filterLabel {
+    switch (filter) {
+      case WarrantyStatus.active:
+        return 'active';
+      case WarrantyStatus.expiring:
+        return 'expiring soon';
+      case WarrantyStatus.expired:
+        return 'expired';
+      default:
+        return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSearch = searchQuery.isNotEmpty;
+    final message = hasSearch
+        ? 'No warranties found for\n"$searchQuery"'
+        : filter == null
+            ? 'No warranties yet'
+            : 'No $_filterLabel warranties';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: WColumn(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            WText(hasSearch ? '🔍' : '📭', fontSize: 48),
+            const SizedBox(height: 8),
+            WText(message, color: kInk, fontSize: 22, className: 'font-bold'),
+            const SizedBox(height: 4),
+            WText(
+              'Try adjusting your filter.',
               color: kMuted,
               fontSize: 14,
               className: 'text-center',

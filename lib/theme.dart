@@ -1,7 +1,6 @@
 /// App theme (Material 3) — central place for brand + status colors.
 ///
-/// Modern refresh: Inter typography (via google_fonts), a soft cool-gray
-/// background, rounded surfaces, and gentle shadows.
+/// Supports both light and dark themes with Material 3 design.
 library;
 
 import 'package:flutter/material.dart';
@@ -9,18 +8,22 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'models/product.dart';
 
-/// Brand colors — warm coral/orange (inspired by the EGOVERN reference).
+/// Brand colors — green theme
 const Color kPrimary = Color(0xFF11B082);
 const Color kPrimaryDark = Color(0xFF0C8C66);
 const Color kSecondary = Color(0xFF34C79D);
 
-/// Surfaces.
+/// Light theme colors
 const Color kBackground = Color(0xFFF6F8FB);
 const Color kSurface = Colors.white;
-
-/// Text.
 const Color kInk = Color(0xFF0F172A);
 const Color kMuted = Color(0xFF64748B);
+
+/// Dark theme colors
+const Color kBackgroundDark = Color(0xFF0F172A);
+const Color kSurfaceDark = Color(0xFF1E293B);
+const Color kInkDark = Color(0xFFF1F5F9);
+const Color kMutedDark = Color(0xFF94A3B8);
 
 /// Status colors used for warranty badges.
 const Map<WarrantyStatus, Color> kStatusColors = {
@@ -42,12 +45,14 @@ const List<BoxShadow> kCardShadow = [
   ),
 ];
 
-ThemeData buildAppTheme() {
+/// Light theme
+ThemeData buildLightTheme() {
   final scheme = ColorScheme.fromSeed(
     seedColor: kPrimary,
     primary: kPrimary,
     secondary: kSecondary,
     surface: kSurface,
+    brightness: Brightness.light,
   );
 
   final baseText = GoogleFonts.interTextTheme().apply(
@@ -57,6 +62,7 @@ ThemeData buildAppTheme() {
 
   return ThemeData(
     useMaterial3: true,
+    brightness: Brightness.light,
     colorScheme: scheme,
     scaffoldBackgroundColor: kBackground,
     textTheme: baseText,
@@ -84,7 +90,6 @@ ThemeData buildAppTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: const Color(0xFFF1F5F9),
-      // Lighter placeholder text.
       hintStyle: const TextStyle(color: Color(0xFFB6BEC9), fontSize: 15),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -127,3 +132,94 @@ ThemeData buildAppTheme() {
     ),
   );
 }
+
+/// Dark theme
+ThemeData buildDarkTheme() {
+  final scheme = ColorScheme.fromSeed(
+    seedColor: kPrimary,
+    primary: kPrimary,
+    secondary: kSecondary,
+    surface: kSurfaceDark,
+    brightness: Brightness.dark,
+  );
+
+  final baseText = GoogleFonts.interTextTheme().apply(
+    bodyColor: kInkDark,
+    displayColor: kInkDark,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: kBackgroundDark,
+    textTheme: baseText,
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: kBackgroundDark,
+      foregroundColor: kInkDark,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        color: kInkDark,
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: kSurfaceDark,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    chipTheme: ChipThemeData(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      side: BorderSide.none,
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: const Color(0xFF334155),
+      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: kPrimary, width: 1.6),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: kSurfaceDark,
+      elevation: 0,
+      height: 68,
+      indicatorColor: kPrimary.withValues(alpha: 0.15),
+      labelTextStyle: WidgetStateProperty.all(
+        const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    ),
+  );
+}
+
+/// Backward compatibility - returns light theme by default
+ThemeData buildAppTheme() => buildLightTheme();

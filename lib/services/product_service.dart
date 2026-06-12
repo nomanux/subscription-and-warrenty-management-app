@@ -122,6 +122,98 @@ class ProductService {
 
   /// Permanently remove a product.
   Future<void> deleteProduct(String id) => _products.doc(id).delete();
+
+  /// Seed demo data if collection is empty.
+  Future<void> seedDemoDataIfEmpty() async {
+    final existing = await _products.limit(1).get();
+    if (existing.docs.isNotEmpty) return;
+
+    final demoProducts = _getDemoProducts();
+    for (final product in demoProducts) {
+      await _products.doc(product.id).set(product.toMap());
+    }
+  }
+
+  List<Product> _getDemoProducts() {
+    const demoImages = {
+      'Instant Hotpot': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+      'MacBook Pro 14"':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PnAAAADElEQVQI12P4z8BQDwAEBAH/wlseKgAAAABJRU5ErkJggg==',
+      'iPhone 15':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PnAAAADElEQVQI12NgYGBgAAAABAABSK+kcQAAAABJRU5ErkJggg==',
+      'Anker PowerBank':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP4//8/AwAI/AL+O3DfsAAAAABJRU5ErkJggg==',
+      'Ceiling Fan':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'Office Chair':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNgYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'Toyota Corolla':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEBAH/wlseKgAAAABJRU5ErkJggg==',
+      'Electric Kettle':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8//8/AwAI/AL+O3DfsAAAAABJRU5ErkJggg==',
+      'Wrist Watch':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'Headphones':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+      'Blender':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      'Motorcycle':
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
+    };
+
+    const seedItems = [
+      ('seed-001', 'Instant Hotpot', 'Home Appliances', '2025-09-01', 24,
+          'Daraz'),
+      ('seed-002', 'MacBook Pro 14"', 'Electronics', '2025-12-10', 12,
+          'Apple Store'),
+      ('seed-003', 'iPhone 15', 'Electronics', '2026-01-05', 24,
+          'Apple Store'),
+      ('seed-004', 'Anker PowerBank', 'Electronics', '2026-03-15', 18,
+          'Amazon'),
+      ('seed-005', 'Ceiling Fan', 'Home Appliances', '2025-11-20', 36,
+          'Singer'),
+      ('seed-006', 'Office Chair', 'Furniture', '2026-01-20', 24, 'IKEA'),
+      ('seed-007', 'Toyota Corolla', 'Vehicle', '2025-08-15', 36, 'Toyota'),
+      ('seed-008', 'Electric Kettle', 'Home Appliances', '2025-06-20', 12,
+          'Philips'),
+      ('seed-009', 'Wrist Watch', 'Others', '2024-06-25', 24, 'Casio'),
+      ('seed-010', 'Headphones', 'Electronics', '2024-07-02', 24,
+          'Sony Center'),
+      ('seed-011', 'Blender', 'Home Appliances', '2023-01-10', 12,
+          'Nutribullet'),
+      ('seed-012', 'Motorcycle', 'Vehicle', '2021-03-01', 36, 'Honda'),
+    ];
+
+    final now = DateTime.now().toUtc().toIso8601String();
+    final products = <Product>[];
+
+    for (final (id, name, category, purchase, months, _) in seedItems) {
+      final expiryDate = calculateExpiryDate(purchase, months);
+      final imageUri = demoImages[name] ?? demoImages['Instant Hotpot']!;
+
+      products.add(
+        Product(
+          id: id,
+          productName: name,
+          brand: null,
+          category: category,
+          purchaseDate: purchase,
+          warrantyDurationMonths: months,
+          serialNumber: null,
+          modelNumber: null,
+          notes: null,
+          receipt: ReceiptFile(uri: imageUri),
+          expiryDate: expiryDate,
+          status: computeStatus(expiryDate),
+          source: ProductSource.manual,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+
+    return products;
+  }
 }
 
 /// Single shared instance, mirroring the old module-level service functions.

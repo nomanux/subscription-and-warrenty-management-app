@@ -39,7 +39,57 @@ Homeowners, gadget lovers, families — anyone who wants their warranties organi
 
 ## 🛠️ Built with
 
-React Native (Expo) · TypeScript · React Native Paper (Material Design) · Cloud Firestore · local receipt storage · over-the-air updates (EAS Update)
+Flutter · Dart · Cloud Firestore · local storage (Drift) · Firebase Authentication
+
+---
+
+## 🚀 How to Run
+
+### Prerequisites
+- **Flutter SDK** (3.12.1 or higher) — [Install Flutter](https://flutter.dev/docs/get-started/install)
+- **Android Studio** or **Xcode** for mobile development (optional for web)
+- **Firebase Project** — set up a Firebase project and add your credentials
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd subscription-and-warrenty-management-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Generate code (build_runner)**
+   ```bash
+   flutter pub run build_runner build
+   ```
+
+4. **Configure Firebase** (if not already done)
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
+   - Download `google-services.json` for Android and place it in `android/app/`
+   - Download `GoogleService-Info.plist` for iOS and place it in `ios/Runner/` (if adding iOS support)
+
+### Run the App
+
+**Web (Chrome)**
+```bash
+flutter run -d chrome
+```
+
+**Android**
+```bash
+flutter run
+```
+(Ensure an Android emulator is running or a device is connected)
+
+**iOS** (macOS only)
+```bash
+flutter run -d ios
+```
 
 ---
 

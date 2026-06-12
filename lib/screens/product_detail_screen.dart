@@ -153,23 +153,52 @@ class ProductDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              // Receipt.
-              if (product.receipt?.uri != null &&
-                  product.receipt!.uri.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                const Text('Receipt',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: kInk)),
-                const SizedBox(height: 10),
+              // Receipt section - always show
+              const SizedBox(height: 20),
+              const Text('Receipt',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              const SizedBox(height: 10),
+              // Show image if available, otherwise show "No image available"
+              if (product.receipt?.uri != null && product.receipt!.uri.isNotEmpty)
                 ReceiptImage(
                   uri: product.receipt!.uri,
                   width: double.infinity,
                   height: 220,
                   borderRadius: BorderRadius.circular(16),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFF3F4F6),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.receipt_long,
+                          size: 48,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No Receipt Image',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
             ],
           ),
         );

@@ -92,6 +92,10 @@ class ProductInput {
     this.modelNumber,
     this.notes,
     this.receipt,
+    this.location,
+    this.shopName,
+    this.visitingCard,
+    this.warrantyCard,
   });
 
   final String productName;
@@ -105,6 +109,10 @@ class ProductInput {
   final String? modelNumber;
   final String? notes;
   final ReceiptFile? receipt;
+  final String? location;
+  final String? shopName;
+  final ReceiptFile? visitingCard;
+  final ReceiptFile? warrantyCard;
 }
 
 /// A full product record as stored in Firestore.
@@ -125,6 +133,10 @@ class Product {
     required this.source,
     required this.createdAt,
     required this.updatedAt,
+    this.location,
+    this.shopName,
+    this.visitingCard,
+    this.warrantyCard,
   });
 
   final String id;
@@ -144,6 +156,10 @@ class Product {
   final ProductSource source;
   final String createdAt;
   final String updatedAt;
+  final String? location;
+  final String? shopName;
+  final ReceiptFile? visitingCard;
+  final ReceiptFile? warrantyCard;
 
   /// Build from a Firestore document's data map plus its id.
   factory Product.fromMap(String id, Map<String, dynamic> data) {
@@ -166,6 +182,14 @@ class Product {
       source: ProductSource.fromWire(data['source'] as String?),
       createdAt: data['createdAt'] as String? ?? '',
       updatedAt: data['updatedAt'] as String? ?? '',
+      location: data['location'] as String?,
+      shopName: data['shopName'] as String?,
+      visitingCard: ReceiptFile.fromMap(
+        (data['visitingCard'] as Map?)?.cast<String, dynamic>(),
+      ),
+      warrantyCard: ReceiptFile.fromMap(
+        (data['warrantyCard'] as Map?)?.cast<String, dynamic>(),
+      ),
     );
   }
 
@@ -187,6 +211,10 @@ class Product {
         'source': source.wire,
         'createdAt': createdAt,
         'updatedAt': updatedAt,
+        'location': location,
+        'shopName': shopName,
+        'visitingCard': visitingCard?.toMap(),
+        'warrantyCard': warrantyCard?.toMap(),
       };
 
   Product copyWith({WarrantyStatus? status}) {
@@ -206,6 +234,10 @@ class Product {
       source: source,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      location: location,
+      shopName: shopName,
+      visitingCard: visitingCard,
+      warrantyCard: warrantyCard,
     );
   }
 }

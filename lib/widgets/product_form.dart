@@ -10,8 +10,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/widgets/app_dropdown.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -39,14 +39,20 @@ class ProductFormScreen extends StatefulWidget {
 class _ProductFormScreenState extends State<ProductFormScreen> {
   late final TextEditingController _name;
   late final TextEditingController _brand;
+  late final TextEditingController _location;
+  late final TextEditingController _shopName;
   late final TextEditingController _purchaseDate;
   late final TextEditingController _months;
+  late final TextEditingController _notes;
   late String _category;
 
   ReceiptFile? _receipt;
   String? _localImageUri;
+  String? _visitingCardUri;
+  String? _warrantyCardUri;
   bool _saving = false;
   String? _error;
+  List<String> _locations = ['Home', 'Office'];
 
   bool get _isEdit => widget.initial != null;
 
@@ -55,29 +61,87 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   @override
   void initState() {
     super.initState();
+    _loadLocations();
     final p = widget.initial;
     _name = TextEditingController(text: p?.productName ?? '');
     _brand = TextEditingController(text: p?.brand ?? '');
+    _location = TextEditingController(text: p?.location ?? 'Home');
+    _shopName = TextEditingController(text: p?.shopName ?? '');
+    _notes = TextEditingController(text: p?.notes ?? '');
     final purchase = (p?.purchaseDate ?? '');
     _purchaseDate = TextEditingController(
       text: purchase.isNotEmpty ? purchase.substring(0, 10) : _todayIso(),
     );
     _months = TextEditingController(
-        text: (p?.warrantyDurationMonths ?? 12).toString());
+      text: (p?.warrantyDurationMonths ?? 12).toString(),
+    );
     _category = p?.category ?? kCategories.first;
     _receipt = p?.receipt;
+  }
+
+  Future<void> _loadLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('locations');
+    if (saved != null && saved.isNotEmpty) {
+      setState(() => _locations = saved);
+    }
+  }
+
+  Future<void> _saveLocations() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('locations', _locations);
+  }
+
+  Future<void> _addNewLocation(String location) async {
+    if (location.trim().isEmpty || _locations.contains(location.trim())) return;
+    setState(() => _locations.add(location.trim()));
+    _location.text = location.trim();
+    await _saveLocations();
+  }
+
+  void _showAddLocationDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add New Location'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g., Bedroom, Living Room',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              _addNewLocation(controller.text);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     _name.dispose();
     _brand.dispose();
+    _location.dispose();
+    _shopName.dispose();
     _purchaseDate.dispose();
     _months.dispose();
+    _notes.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage({required String type}) async {
     setState(() => _error = null);
     try {
       final picker = ImagePicker();
@@ -88,8 +152,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (file == null) return;
       final bytes = await file.readAsBytes();
       final mime = file.mimeType ?? _guessMime(file.name);
+      final uri = 'data:$mime;base64,${base64Encode(bytes)}';
       setState(() {
-        _localImageUri = 'data:$mime;base64,${base64Encode(bytes)}';
+        if (type == 'receipt') {
+          _localImageUri = uri;
+        } else if (type == 'visiting') {
+          _visitingCardUri = uri;
+        } else if (type == 'warranty') {
+          _warrantyCardUri = uri;
+        }
       });
     } catch (e) {
       setState(() => _error = 'Could not load image: $e');
@@ -123,8 +194,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         );
       }
 
-      final purchaseIso =
-          DateTime.parse(_purchaseDate.text.trim()).toUtc().toIso8601String();
+      var finalVisitingCard = widget.initial?.visitingCard;
+      if (_visitingCardUri != null) {
+        finalVisitingCard = ReceiptFile(
+          uri: _visitingCardUri!,
+          fileType: 'image',
+          thumbnailUri: _visitingCardUri,
+        );
+      }
+
+      var finalWarrantyCard = widget.initial?.warrantyCard;
+      if (_warrantyCardUri != null) {
+        finalWarrantyCard = ReceiptFile(
+          uri: _warrantyCardUri!,
+          fileType: 'image',
+          thumbnailUri: _warrantyCardUri,
+        );
+      }
+
+      final purchaseIso = DateTime.parse(
+        _purchaseDate.text.trim(),
+      ).toUtc().toIso8601String();
 
       final input = ProductInput(
         productName: name,
@@ -134,8 +224,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         warrantyDurationMonths: int.tryParse(_months.text.trim()) ?? 12,
         serialNumber: widget.initial?.serialNumber,
         modelNumber: widget.initial?.modelNumber,
-        notes: widget.initial?.notes,
+        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
         receipt: finalReceipt,
+        location: _location.text.trim().isEmpty ? null : _location.text.trim(),
+        shopName: _shopName.text.trim().isEmpty ? null : _shopName.text.trim(),
+        visitingCard: finalVisitingCard,
+        warrantyCard: finalWarrantyCard,
       );
 
       if (_isEdit) {
@@ -158,7 +252,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       builder: (_) => AlertDialog(
         title: const Text('Delete warranty?'),
         content: Text(
-            'Permanently delete "${widget.initial!.productName}"? This cannot be undone.'),
+          'Permanently delete "${widget.initial!.productName}"? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -166,7 +261,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFDC2626)),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -196,7 +292,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           tooltip: 'Cancel',
           onPressed: () => Navigator.of(context).pop(),
           icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01, color: kInk, size: 22),
+            icon: HugeIcons.strokeRoundedCancel01,
+            color: kInk,
+            size: 22,
+          ),
         ),
         title: Text(_isEdit ? 'Edit Warranty' : 'Add Warranty'),
         actions: [
@@ -205,82 +304,235 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               tooltip: 'Delete',
               onPressed: _saving ? null : _delete,
               icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedDelete02,
-                  color: const Color(0xFFDC2626),
-                  size: 22),
+                icon: HugeIcons.strokeRoundedDelete02,
+                color: const Color(0xFFDC2626),
+                size: 22,
+              ),
             ),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _FormField(
-                label: 'Product name',
-                controller: _name,
-                hint: 'e.g. Samsung TV',
-              ),
-              _FormField(
-                label: 'Brand (optional)',
-                controller: _brand,
-                hint: 'e.g. Samsung',
-              ),
-              _FieldLabel('Category'),
-              AppDropdown<String>(
-                value: _category,
-                title: 'Select category',
-                items: kCategories,
-                itemLabel: (c) => c,
-                onChanged: (v) => setState(() => _category = v),
-              ),
-              const SizedBox(height: 18),
-              _FormField(
-                label: 'Purchase date (YYYY-MM-DD)',
-                controller: _purchaseDate,
-                hint: 'YYYY-MM-DD',
-              ),
-              _FormField(
-                label: 'Warranty (months)',
-                controller: _months,
-                hint: '12',
-                keyboardType: TextInputType.number,
-              ),
-              _FieldLabel('Receipt image'),
-              if (previewUri != null && previewUri.isNotEmpty) ...[
-                ReceiptImage(
-                  uri: previewUri,
-                  width: double.infinity,
-                  height: 180,
-                  borderRadius: BorderRadius.circular(14),
+              // Upload Receipt Section at the top
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: const Color(0xFFCBD5E1),
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 10),
-              ],
-              _UploadButton(
-                label:
-                    previewUri != null ? 'Change image' : 'Add receipt image',
-                onTap: _pickImage,
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 14),
-                Row(
+                child: Column(
                   children: [
                     HugeIcon(
-                        icon: HugeIcons.strokeRoundedAlertCircle,
-                        color: const Color(0xFFDC2626),
-                        size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(_error!,
-                          style: const TextStyle(color: Color(0xFFDC2626))),
+                      icon: HugeIcons.strokeRoundedFile01,
+                      color: const Color(0xFFB0B9C8),
+                      size: 40,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Upload Receipt',
+                      style: TextStyle(
+                        color: kInk,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Scan or upload receipt for automatic extraction',
+                      style: TextStyle(color: kMuted, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    if (previewUri != null && previewUri.isNotEmpty) ...[
+                      ReceiptImage(
+                        uri: previewUri,
+                        width: 120,
+                        height: 120,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    FilledButton(
+                      onPressed: () => _pickImage(type: 'receipt'),
+                      child: const Text('Upload Receipt'),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 24),
+              // Extracted Information
+              const Text(
+                'Extracted Information',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _FormField(
+                label: 'Product Name',
+                controller: _name,
+                hint: 'Samsung Smart TV',
+              ),
+              _FormField(label: 'Brand', controller: _brand, hint: 'Samsung'),
+              // Purchase Date and Warranty in a row
+              Row(
+                children: [
+                  Expanded(
+                    child: _FormField(
+                      label: 'Purchase Date',
+                      controller: _purchaseDate,
+                      hint: '2025-06-10',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _FormField(
+                      label: 'Warranty',
+                      controller: _months,
+                      hint: '12 Months',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              // Category with icon buttons
+              const SizedBox(height: 12),
+              const Text(
+                'Category',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 70,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: kCategories.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (_, i) {
+                    final cat = kCategories[i];
+                    final selected = _category == cat;
+                    return _CategoryButton(
+                      label: cat,
+                      selected: selected,
+                      onTap: () => setState(() => _category = cat),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Location Dropdown
+              const Text(
+                'Location',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  value: _location.text.isEmpty
+                      ? _locations.first
+                      : _location.text,
+                  items: [
+                    ..._locations.map(
+                      (e) => DropdownMenuItem(value: e, child: Text(e)),
+                    ),
+                    DropdownMenuItem(
+                      value: '__add__',
+                      child: Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedAdd01,
+                            color: kPrimary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Add new location',
+                            style: TextStyle(color: kPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    if (v == '__add__') {
+                      _showAddLocationDialog();
+                    } else if (v != null) {
+                      setState(() => _location.text = v);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Additional Documents
+              const Text(
+                'Additional Documents',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ExpandableDocumentItem(
+                title: 'Warranty Card',
+                onAdd: () => _pickImage(type: 'warranty'),
+                hasImage: _warrantyCardUri != null,
+              ),
+              const SizedBox(height: 8),
+              _ExpandableDocumentItem(
+                title: 'Visiting Card',
+                onAdd: () => _pickImage(type: 'visiting'),
+                hasImage: _visitingCardUri != null,
+              ),
+              const SizedBox(height: 24),
+              if (_error != null) ...[
+                Row(
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedAlertCircle,
+                      color: const Color(0xFFDC2626),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(color: Color(0xFFDC2626)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
               ],
-              const SizedBox(height: 28),
+              // Save Button
               SizedBox(
                 width: double.infinity,
+                height: 50,
                 child: FilledButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
@@ -288,9 +540,17 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
-                      : Text(_isEdit ? 'Save changes' : 'Save warranty'),
+                      : Text(
+                          _isEdit ? 'Save Changes' : 'Save Warranty',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -313,7 +573,10 @@ class _FieldLabel extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-            color: kInk, fontSize: 14, fontWeight: FontWeight.w600),
+          color: kInk,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -342,15 +605,162 @@ class _FormField extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 16, color: kInk),
+          style: const TextStyle(fontSize: 14, color: kInk),
           decoration: InputDecoration(
             hintText: hint,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+            isDense: true,
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
       ],
+    );
+  }
+}
+
+/// Category button with icon.
+class _CategoryButton extends StatelessWidget {
+  const _CategoryButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 60,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? kPrimary : const Color(0xFFE2E8F0),
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: selected
+              ? kPrimary.withValues(alpha: 0.1)
+              : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedShoppingBag01,
+              color: selected ? kPrimary : kMuted,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label.split(' ').first,
+              style: TextStyle(
+                fontSize: 10,
+                color: selected ? kPrimary : kMuted,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Expandable document item (e.g., Warranty Card, Visiting Card).
+class _ExpandableDocumentItem extends StatelessWidget {
+  const _ExpandableDocumentItem({
+    required this.title,
+    required this.onAdd,
+    required this.hasImage,
+  });
+
+  final String title;
+  final VoidCallback onAdd;
+  final bool hasImage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onAdd,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Text(title, style: const TextStyle(color: kInk, fontSize: 14)),
+                const Spacer(),
+                if (hasImage)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kPrimary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      '✓ Added',
+                      style: TextStyle(
+                        color: kPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedAdd01,
+                    color: kPrimary,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A text area for notes (multi-line input).
+class _NotesField extends StatelessWidget {
+  const _NotesField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: 3,
+      minLines: 2,
+      style: const TextStyle(fontSize: 14, color: kInk),
+      decoration: InputDecoration(
+        hintText: 'Add any notes about the warranty...',
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+        isDense: true,
+      ),
     );
   }
 }
@@ -381,9 +791,10 @@ class _UploadButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               HugeIcon(
-                  icon: HugeIcons.strokeRoundedCamera01,
-                  color: kPrimary,
-                  size: 18),
+                icon: HugeIcons.strokeRoundedCamera01,
+                color: kPrimary,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 label,
