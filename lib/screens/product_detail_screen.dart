@@ -21,7 +21,7 @@ class ProductDetailScreen extends StatelessWidget {
 
   String _fmt(String iso) {
     try {
-      return DateFormat('MMM d, yyyy').format(DateTime.parse(iso).toLocal());
+      return DateFormat('d MMM, yy').format(DateTime.parse(iso).toLocal());
     } catch (_) {
       return iso;
     }
@@ -138,6 +138,18 @@ class ProductDetailScreen extends StatelessWidget {
                         icon: HugeIcons.strokeRoundedShield01,
                         label: 'Expires',
                         value: _fmt(product.expiryDate)),
+                    if (product.shopName != null &&
+                        product.shopName!.isNotEmpty)
+                      _InfoRow(
+                          icon: HugeIcons.strokeRoundedShoppingCart01,
+                          label: 'Shop name',
+                          value: product.shopName!),
+                    if (product.shopPhoneNumber != null &&
+                        product.shopPhoneNumber!.isNotEmpty)
+                      _InfoRow(
+                          icon: HugeIcons.strokeRoundedCall02,
+                          label: 'Shop phone',
+                          value: product.shopPhoneNumber!),
                     if (product.serialNumber != null &&
                         product.serialNumber!.isNotEmpty)
                       _InfoRow(

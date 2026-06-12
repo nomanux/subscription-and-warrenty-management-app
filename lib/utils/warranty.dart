@@ -51,3 +51,18 @@ WarrantyStatus computeStatus(String expiryDate, [DateTime? now]) {
   if (days <= kExpiringSoonThresholdDays) return WarrantyStatus.expiring;
   return WarrantyStatus.active;
 }
+
+/// Format warranty duration for badge display.
+/// Within 30 days: "X days", beyond 30 days: "2m", "2m 1d", "3m", etc.
+String formatWarrantyDuration(int days) {
+  if (days < 0) return 'Expired';
+  if (days <= 30) return '$days day${days == 1 ? '' : 's'}';
+
+  final months = days ~/ 30;
+  final remainingDays = days % 30;
+
+  if (remainingDays == 0) {
+    return '${months}m';
+  }
+  return '${months}m ${remainingDays}d';
+}

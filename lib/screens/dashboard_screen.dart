@@ -12,6 +12,7 @@ import '../utils/warranty.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/donut_chart.dart';
 import '../widgets/product_card.dart';
+import 'product_detail_screen.dart';
 
 class _Stats {
   int total = 0;
@@ -20,10 +21,24 @@ class _Stats {
   int expired = 0;
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key, required this.onNavigate});
 
   final void Function(int index) onNavigate;
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String? expandedProductId;
+  late final Stream<List<Product>> _productsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _productsStream = productService.watchProducts();
+  }
 
   _Stats _computeStats(List<Product> products) {
     final stats = _Stats();
@@ -43,16 +58,24 @@ class DashboardScreen extends StatelessWidget {
 
   List<Product> _expiringSoon(List<Product> products) {
     return products.where((p) => p.status == WarrantyStatus.expiring).toList()
-      ..sort((a, b) =>
-          daysRemaining(a.expiryDate).compareTo(daysRemaining(b.expiryDate)));
+      ..sort(
+        (a, b) =>
+            daysRemaining(a.expiryDate).compareTo(daysRemaining(b.expiryDate)),
+      );
+  }
+
+  void _handleExpandProduct(Product product) {
+    setState(() {
+      expandedProductId = expandedProductId == product.id ? null : product.id;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AppDrawer(currentIndex: 0, onNavigate: onNavigate),
+      drawer: AppDrawer(currentIndex: 0, onNavigate: widget.onNavigate),
       body: StreamBuilder<List<Product>>(
-        stream: productService.watchProducts(),
+        stream: _productsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -77,17 +100,24 @@ class DashboardScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Expiring soon',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: kInk)),
+                    const Text(
+                      'Expiring soon',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: kInk,
+                      ),
+                    ),
                     if (expiringSoon.isNotEmpty)
                       GestureDetector(
-                        onTap: () => onNavigate(1),
-                        child: const Text('See all',
-                            style: TextStyle(
-                                color: kPrimary, fontWeight: FontWeight.w600)),
+                        onTap: () => widget.onNavigate(1),
+                        child: const Text(
+                          'See all',
+                          style: TextStyle(
+                            color: kPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -98,10 +128,23 @@ class DashboardScreen extends StatelessWidget {
                   child: _EmptyExpiring(),
                 )
               else
-                ...expiringSoon.map((p) => Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                      child: ProductCard(product: p),
-                    )),
+                ...expiringSoon.map((p) {
+                  final isExpanded = expandedProductId == p.id;
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: ProductCard(
+                      key: ValueKey(p.id),
+                      product: p,
+                      isExpanded: isExpanded,
+                      onExpand: () => _handleExpandProduct(p),
+                      onViewDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProductDetailScreen(initial: p),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
               const SizedBox(height: 24),
             ],
           );
@@ -141,26 +184,33 @@ class _HeroHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedMenu01,
-                  color: Colors.white,
-                  size: 24),
+                icon: HugeIcons.strokeRoundedMenu01,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Good day 👋',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                'Good day 👋',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 2),
-              const Text('Warranty Vault',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700)),
+              const Text(
+                'Warranty Vault',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ],
@@ -188,9 +238,14 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Warranty Summary',
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: kInk)),
+          const Text(
+            'Warranty Summary',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: kInk,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -200,11 +255,17 @@ class _SummaryCard extends StatelessWidget {
                 centerLabel: stats.total == 1 ? 'Warranty' : 'Warranties',
                 segments: [
                   DonutSegment(
-                      stats.active, kStatusColors[WarrantyStatus.active]!),
+                    stats.active,
+                    kStatusColors[WarrantyStatus.active]!,
+                  ),
                   DonutSegment(
-                      stats.expiring, kStatusColors[WarrantyStatus.expiring]!),
+                    stats.expiring,
+                    kStatusColors[WarrantyStatus.expiring]!,
+                  ),
                   DonutSegment(
-                      stats.expired, kStatusColors[WarrantyStatus.expired]!),
+                    stats.expired,
+                    kStatusColors[WarrantyStatus.expired]!,
+                  ),
                 ],
               ),
               const SizedBox(width: 20),
@@ -269,20 +330,27 @@ class _BreakdownRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$pct%',
-                  style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: kInk,
-                      height: 1.1)),
-              Text(label,
-                  style: const TextStyle(fontSize: 12, color: kMuted)),
+              Text(
+                '$pct%',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: kInk,
+                  height: 1.1,
+                ),
+              ),
+              Text(label, style: const TextStyle(fontSize: 12, color: kMuted)),
             ],
           ),
         ),
-        Text('$count ${count == 1 ? 'item' : 'items'}',
-            style: const TextStyle(
-                fontSize: 12, color: kMuted, fontWeight: FontWeight.w500)),
+        Text(
+          '$count ${count == 1 ? 'item' : 'items'}',
+          style: const TextStyle(
+            fontSize: 12,
+            color: kMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -303,9 +371,11 @@ class _EmptyExpiring extends StatelessWidget {
         children: [
           Text('🎉', style: TextStyle(fontSize: 32)),
           SizedBox(height: 8),
-          Text('Nothing expiring in the next 30 days.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: kMuted, fontWeight: FontWeight.w500)),
+          Text(
+            'Nothing expiring in the next 30 days.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: kMuted, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

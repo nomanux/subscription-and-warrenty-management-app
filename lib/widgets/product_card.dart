@@ -1,21 +1,14 @@
-/// A single warranty card — avatar, name/category, days-left pill, and a thin
-/// progress bar showing how much warranty time remains.
-///
-/// Built with flutter_twind for the shell; the progress bar uses plain
-/// Containers for pixel precision. A trailing 3-dot menu (Edit/Delete) appears
-/// only when callbacks are provided (the Warranties list); the Dashboard
-/// "expiring soon" cards omit it to match the mockup.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_twind/flutter_twind.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
 
 import '../models/product.dart';
 import '../theme.dart';
 import '../utils/warranty.dart';
 
-/// Build a Tailwind arbitrary rgba class, e.g. `bg-[rgba(22,163,74,0.12)]`.
 String _rgbaClass(String prop, Color color, double opacity) {
   final r = (color.r * 255).round();
   final g = (color.g * 255).round();
@@ -23,7 +16,6 @@ String _rgbaClass(String prop, Color color, double opacity) {
   return '$prop-[rgba($r,$g,$b,$opacity)]';
 }
 
-/// Pick an icon for the category (used when there's no receipt thumbnail).
 List<List<dynamic>> _categoryIcon(String category) {
   switch (category) {
     case 'Electronics':
@@ -38,6 +30,15 @@ List<List<dynamic>> _categoryIcon(String category) {
       return HugeIcons.strokeRoundedCar01;
     default:
       return HugeIcons.strokeRoundedPackage01;
+  }
+}
+
+String _formatDate(String iso) {
+  try {
+    final date = DateTime.parse(iso).toLocal();
+    return DateFormat('d MMM, yy').format(date);
+  } catch (_) {
+    return iso;
   }
 }
 
@@ -59,53 +60,17 @@ class ProductCard extends StatefulWidget {
   State<ProductCard> createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<ProductCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _ProductCardState extends State<ProductCard> {
+  static const _animationDuration = Duration(milliseconds: 260);
+  static const _animationCurve = Curves.easeInOutCubic;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-      value: widget.isExpanded ? 1.0 : 0.0,
-    );
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void didUpdateWidget(ProductCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isExpanded != oldWidget.isExpanded) {
-      if (widget.isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Product get product => widget.product;
-  VoidCallback? get onViewDetails => widget.onViewDetails;
-
-  /// Fraction of the warranty period still remaining (0..1).
   double get _remainingFraction {
     try {
       final total = DateTime.parse(
-        product.expiryDate,
-      ).difference(DateTime.parse(product.purchaseDate)).inDays;
+        widget.product.expiryDate,
+      ).difference(DateTime.parse(widget.product.purchaseDate)).inDays;
       if (total <= 0) return 0;
-      final remaining = daysRemaining(product.expiryDate);
+      final remaining = daysRemaining(widget.product.expiryDate);
       return (remaining / total).clamp(0.0, 1.0);
     } catch (_) {
       return 0;
@@ -114,171 +79,206 @@ class _ProductCardState extends State<ProductCard>
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final days = daysRemaining(product.expiryDate);
     final color = kStatusColors[product.status]!;
-    final expired = product.status == WarrantyStatus.expired;
-    final pillLabel = expired ? 'Expired' : '$days day${days == 1 ? '' : 's'}';
+    final pillLabel = formatWarrantyDuration(days);
     final subtitle = product.brand != null && product.brand!.isNotEmpty
         ? '${product.brand} · ${product.category}'
         : product.category;
     final thumb = product.receipt?.thumbnailUri ?? product.receipt?.uri;
     final hasImage = thumb != null && thumb.isNotEmpty;
 
-    final collapsedContent = WRow(
-      children: [
-        // Avatar with image badge indicator.
-        Stack(
-          children: [
-            // Always show category icon
-            WContainer(
-              className: '${_rgbaClass('bg', kPrimary, 0.10)} rounded-[14px]',
-              width: 48,
-              height: 48,
-              child: Center(
-                child: HugeIcon(
-                  icon: _categoryIcon(product.category),
-                  color: kPrimary,
-                  size: 22,
-                ),
+    return RepaintBoundary(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onExpand,
+        child: AnimatedContainer(
+          duration: _animationDuration,
+          curve: _animationCurve,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: widget.isExpanded
+                ? Border.all(color: kPrimary.withValues(alpha: 0.5), width: 1)
+                : Border.all(color: Colors.transparent, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            // Image indicator badge
-            if (hasImage)
-              Positioned(
-                top: -2,
-                right: -2,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: kPrimary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.image,
-                    size: 10,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(width: 14),
-        // Title + subtitle.
-        Expanded(
-          child: WColumn(
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              WText(
-                product.productName,
-                color: kInk,
-                fontSize: 15,
-                className: 'font-bold',
-                maxLines: 1,
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: WRow(
+                  children: [
+                    Stack(
+                      children: [
+                        WContainer(
+                          className:
+                              '${_rgbaClass('bg', kPrimary, 0.10)} rounded-[14px]',
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: HugeIcon(
+                              icon: _categoryIcon(product.category),
+                              color: kPrimary,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                        if (hasImage)
+                          Positioned(
+                            top: -2,
+                            right: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: kPrimary,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.image,
+                                size: 10,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: WColumn(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          WText(
+                            product.productName,
+                            color: kInk,
+                            fontSize: 15,
+                            className: 'font-bold',
+                            maxLines: 1,
+                          ),
+                          const SizedBox(height: 3),
+                          WText(
+                            subtitle,
+                            color: kMuted,
+                            fontSize: 13,
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            pillLabel,
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _ProgressBar(
+                          fraction: _remainingFraction,
+                          color: color,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 3),
-              WText(subtitle, color: kMuted, fontSize: 13, maxLines: 1),
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: _ExpandedDetails(
+                  product: product,
+                  onViewDetails: widget.onViewDetails,
+                ),
+                crossFadeState: widget.isExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: _animationDuration,
+                firstCurve: Curves.easeOut,
+                secondCurve: Curves.easeIn,
+                sizeCurve: _animationCurve,
+                alignment: Alignment.topCenter,
+              ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        // Days pill + progress bar.
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 5,
-              ),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                pillLabel,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            _ProgressBar(fraction: _remainingFraction, color: color),
+      ),
+    );
+  }
+}
+
+class _ExpandedDetails extends StatelessWidget {
+  const _ExpandedDetails({required this.product, required this.onViewDetails});
+
+  final Product product;
+  final VoidCallback? onViewDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: WColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1, color: const Color(0xFFE5E7EB)),
+          const SizedBox(height: 16),
+          _DetailRow('Purchase Date', _formatDate(product.purchaseDate)),
+          const SizedBox(height: 12),
+          _DetailRow('Expiry Date', _formatDate(product.expiryDate)),
+          if (product.shopName?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            _DetailRow('Shop Name', product.shopName!),
           ],
-        ),
-      ],
-    );
-
-    final expandedDetails = WColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Container(
-          height: 1,
-          color: const Color(0xFFE5E7EB),
-        ),
-        const SizedBox(height: 16),
-        _DetailRow('Purchase Date', product.purchaseDate),
-        const SizedBox(height: 12),
-        _DetailRow('Expiry Date', product.expiryDate),
-        if (product.serialNumber?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 12),
-          _DetailRow('Serial Number', product.serialNumber!),
-        ],
-        if (product.notes?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 12),
-          _DetailRow('Notes', product.notes!),
-        ],
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: onViewDetails ?? () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimary,
-              foregroundColor: Colors.white,
+          if (product.serialNumber?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            _DetailRow('Serial Number', product.serialNumber!),
+          ],
+          if (product.notes?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 12),
+            _DetailRow('Notes', product.notes!),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onViewDetails ?? () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimary,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('View Details'),
             ),
-            child: const Text('View Details'),
           ),
-        ),
-      ],
-    );
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: widget.onExpand,
-      child: WContainer(
-        className: 'bg-white rounded-[18px] shadow-md p-4',
-        child: AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                collapsedContent,
-                ClipRect(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    heightFactor: _animation.value,
-                    child: Opacity(
-                      opacity: _animation.value,
-                      child: expandedDetails,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+        ],
       ),
     );
   }
@@ -335,15 +335,8 @@ class _DetailRow extends StatelessWidget {
             className: 'font-medium',
           ),
         ),
-        Expanded(
-          child: WText(
-            value,
-            color: kInk,
-            fontSize: 13,
-          ),
-        ),
+        Expanded(child: WText(value, color: kInk, fontSize: 13)),
       ],
     );
   }
 }
-

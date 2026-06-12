@@ -94,6 +94,7 @@ class ProductInput {
     this.receipt,
     this.location,
     this.shopName,
+    this.shopPhoneNumber,
     this.visitingCard,
     this.warrantyCard,
   });
@@ -111,6 +112,7 @@ class ProductInput {
   final ReceiptFile? receipt;
   final String? location;
   final String? shopName;
+  final String? shopPhoneNumber;
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
 }
@@ -135,6 +137,7 @@ class Product {
     required this.updatedAt,
     this.location,
     this.shopName,
+    this.shopPhoneNumber,
     this.visitingCard,
     this.warrantyCard,
   });
@@ -158,6 +161,7 @@ class Product {
   final String updatedAt;
   final String? location;
   final String? shopName;
+  final String? shopPhoneNumber;
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
 
@@ -184,6 +188,7 @@ class Product {
       updatedAt: data['updatedAt'] as String? ?? '',
       location: data['location'] as String?,
       shopName: data['shopName'] as String?,
+      shopPhoneNumber: data['shopPhoneNumber'] as String?,
       visitingCard: ReceiptFile.fromMap(
         (data['visitingCard'] as Map?)?.cast<String, dynamic>(),
       ),
@@ -213,6 +218,7 @@ class Product {
         'updatedAt': updatedAt,
         'location': location,
         'shopName': shopName,
+        'shopPhoneNumber': shopPhoneNumber,
         'visitingCard': visitingCard?.toMap(),
         'warrantyCard': warrantyCard?.toMap(),
       };
@@ -236,6 +242,7 @@ class Product {
       updatedAt: updatedAt,
       location: location,
       shopName: shopName,
+      shopPhoneNumber: shopPhoneNumber,
       visitingCard: visitingCard,
       warrantyCard: warrantyCard,
     );

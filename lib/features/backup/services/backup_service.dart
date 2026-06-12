@@ -6,8 +6,8 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:warranty_vault/core/database/app_database.dart';
 
-import '../../../core/database/app_database.dart';
 import '../../../core/notifications/notification_service.dart';
 
 class BackupService {

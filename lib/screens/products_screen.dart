@@ -22,38 +22,51 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  WarrantyStatus? selectedFilter;
   String searchQuery = '';
-  String? expandedProductId;
+  late final ValueNotifier<String?> expandedProductId;
+  late final ValueNotifier<WarrantyStatus?> selectedFilter;
   late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    expandedProductId = ValueNotifier<String?>(null);
+    selectedFilter = ValueNotifier<WarrantyStatus?>(null);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    expandedProductId.dispose();
+    selectedFilter.dispose();
     super.dispose();
+  }
+
+  void _handleExpandProduct(Product product) {
+    expandedProductId.value = expandedProductId.value == product.id ? null : product.id;
   }
 
   List<Product> _filterProducts(List<Product> products) {
     var filtered = products;
 
     // Apply status filter
-    if (selectedFilter != null) {
-      filtered = filtered.where((p) => p.status == selectedFilter).toList();
+    if (selectedFilter.value != null) {
+      filtered = filtered.where((p) => p.status == selectedFilter.value).toList();
     }
 
     // Apply search filter
     if (searchQuery.isNotEmpty) {
       filtered = filtered
-          .where((p) =>
-              p.productName.toLowerCase().contains(searchQuery.toLowerCase()) ||
-              (p.brand?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false) ||
-              p.category.toLowerCase().contains(searchQuery.toLowerCase()))
+          .where(
+            (p) =>
+                p.productName.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ||
+                (p.brand?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+                    false) ||
+                p.category.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
           .toList();
     }
 
@@ -69,8 +82,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: kPrimary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: const Text(
+          'Add',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       ),
       body: StreamBuilder<List<Product>>(
         stream: productService.watchProducts(),
@@ -82,13 +97,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Could not load warranties.\n${snapshot.error}',
-                    textAlign: TextAlign.center),
+                child: Text(
+                  'Could not load warranties.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
           final products = snapshot.data ?? [];
-          final filteredProducts = _filterProducts(products);
 
           if (products.isEmpty) {
             return const _EmptyState();
@@ -103,7 +119,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   controller: _searchController,
                   onChanged: (value) => setState(() => searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Search warranties...',
+                    hintText: 'Search Items...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: searchQuery.isNotEmpty
                         ? GestureDetector(
@@ -121,33 +137,55 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 ),
               ),
               _FilterBar(
-                selectedFilter: selectedFilter,
-                onFilterChanged: (filter) => setState(() => selectedFilter = filter),
+                selectedFilter: selectedFilter.value,
+                onFilterChanged: (filter) =>
+                    selectedFilter.value = filter,
               ),
               Expanded(
-                child: filteredProducts.isEmpty
-                    ? _NoResultsState(filter: selectedFilter, searchQuery: searchQuery)
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                        itemCount: filteredProducts.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, i) {
-                          final product = filteredProducts[i];
-                          final isExpanded = expandedProductId == product.id;
-                          return ProductCard(
-                            product: product,
-                            isExpanded: isExpanded,
-                            onExpand: () => setState(() {
-                              expandedProductId = isExpanded ? null : product.id;
-                            }),
-                            onViewDetails: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ProductDetailScreen(initial: product),
-                              ),
-                            ),
+                child: ValueListenableBuilder<WarrantyStatus?>(
+                  valueListenable: selectedFilter,
+                  builder: (context, _, __) {
+                    final filteredForDisplay = _filterProducts(products);
+                    return filteredForDisplay.isEmpty
+                        ? _NoResultsState(
+                            filter: selectedFilter.value,
+                            searchQuery: searchQuery,
+                          )
+                        : ValueListenableBuilder<String?>(
+                            valueListenable: expandedProductId,
+                            builder: (context, expandedId, _) {
+                              return RepaintBoundary(
+                                child: ListView(
+                                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                                  children: [
+                                    ...filteredForDisplay.map((product) {
+                                      final isExpanded = expandedId == product.id;
+                                      return Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                                        child: ProductCard(
+                                          key: ValueKey(product.id),
+                                          product: product,
+                                          isExpanded: isExpanded,
+                                          onExpand: () =>
+                                              _handleExpandProduct(product),
+                                          onViewDetails: () =>
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => ProductDetailScreen(
+                                                    initial: product,
+                                                  ),
+                                                ),
+                                              ),
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              );
+                            },
                           );
-                        },
-                      ),
+                  },
+                ),
               ),
             ],
           );
@@ -170,8 +208,12 @@ class _EmptyState extends StatelessWidget {
           children: const [
             WText('🗂️', fontSize: 48),
             SizedBox(height: 8),
-            WText('Your vault is empty',
-                color: kInk, fontSize: 22, className: 'font-bold'),
+            WText(
+              'Your vault is empty',
+              color: kInk,
+              fontSize: 22,
+              className: 'font-bold',
+            ),
             SizedBox(height: 4),
             WText(
               'Tap “Add” to track your first warranty.',
@@ -259,22 +301,20 @@ class _FilterChip extends StatelessWidget {
             WText(icon!, fontSize: 14),
             const SizedBox(width: 6),
           ],
-          WText(label,
-              fontSize: 13,
-              color: isSelected ? Colors.white : kInk,
-              className: 'font-medium'),
+          WText(
+            label,
+            fontSize: 13,
+            color: isSelected ? Colors.white : kInk,
+            className: 'font-medium',
+          ),
         ],
       ),
       selected: isSelected,
       onSelected: (_) => onTap(),
       backgroundColor: Colors.transparent,
       selectedColor: kPrimary,
-      side: BorderSide(
-        color: isSelected ? kPrimary : const Color(0xFFD1D5DB),
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      side: BorderSide(color: isSelected ? kPrimary : const Color(0xFFD1D5DB)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }
@@ -304,8 +344,8 @@ class _NoResultsState extends StatelessWidget {
     final message = hasSearch
         ? 'No warranties found for\n"$searchQuery"'
         : filter == null
-            ? 'No warranties yet'
-            : 'No $_filterLabel warranties';
+        ? 'No warranties yet'
+        : 'No $_filterLabel warranties';
 
     return Center(
       child: Padding(

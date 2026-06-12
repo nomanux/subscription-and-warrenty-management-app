@@ -41,6 +41,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late final TextEditingController _brand;
   late final TextEditingController _location;
   late final TextEditingController _shopName;
+  late final TextEditingController _shopPhoneNumber;
   late final TextEditingController _purchaseDate;
   late final TextEditingController _months;
   late final TextEditingController _notes;
@@ -67,6 +68,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _brand = TextEditingController(text: p?.brand ?? '');
     _location = TextEditingController(text: p?.location ?? 'Home');
     _shopName = TextEditingController(text: p?.shopName ?? '');
+    _shopPhoneNumber = TextEditingController(text: p?.shopPhoneNumber ?? '');
     _notes = TextEditingController(text: p?.notes ?? '');
     final purchase = (p?.purchaseDate ?? '');
     _purchaseDate = TextEditingController(
@@ -135,6 +137,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _brand.dispose();
     _location.dispose();
     _shopName.dispose();
+    _shopPhoneNumber.dispose();
     _purchaseDate.dispose();
     _months.dispose();
     _notes.dispose();
@@ -228,6 +231,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         receipt: finalReceipt,
         location: _location.text.trim().isEmpty ? null : _location.text.trim(),
         shopName: _shopName.text.trim().isEmpty ? null : _shopName.text.trim(),
+        shopPhoneNumber: _shopPhoneNumber.text.trim().isEmpty ? null : _shopPhoneNumber.text.trim(),
         visitingCard: finalVisitingCard,
         warrantyCard: finalWarrantyCard,
       );
@@ -486,6 +490,28 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     }
                   },
                 ),
+              ),
+              const SizedBox(height: 24),
+              // Shop Information
+              const Text(
+                'Shop Information',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _FormField(
+                label: 'Shop Name',
+                controller: _shopName,
+                hint: 'Electronics Store',
+              ),
+              _FormField(
+                label: 'Shop Phone',
+                controller: _shopPhoneNumber,
+                hint: '+1 234 567 8900',
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 24),
               // Additional Documents

@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_twind/flutter_twind.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:warranty_vault/core/database/app_database.dart';
 
-import 'core/database/app_database.dart';
 import 'core/providers/app_providers.dart';
 import 'core/providers/theme_provider.dart';
 import 'dev/seed_local.dart';
