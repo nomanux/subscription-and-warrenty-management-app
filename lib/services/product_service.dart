@@ -77,6 +77,11 @@ class ProductService {
       modelNumber: input.modelNumber,
       notes: input.notes,
       receipt: input.receipt,
+      location: input.location,
+      shopName: input.shopName,
+      shopPhoneNumber: input.shopPhoneNumber,
+      visitingCard: input.visitingCard,
+      warrantyCard: input.warrantyCard,
       expiryDate: expiryDate,
       status: computeStatus(expiryDate),
       source: source,
@@ -109,6 +114,11 @@ class ProductService {
       modelNumber: input.modelNumber,
       notes: input.notes,
       receipt: input.receipt,
+      location: input.location,
+      shopName: input.shopName,
+      shopPhoneNumber: input.shopPhoneNumber,
+      visitingCard: input.visitingCard,
+      warrantyCard: input.warrantyCard,
       expiryDate: expiryDate,
       status: computeStatus(expiryDate),
       source: existing.source,
@@ -122,6 +132,13 @@ class ProductService {
 
   /// Permanently remove a product.
   Future<void> deleteProduct(String id) => _products.doc(id).delete();
+
+  /// Write a product under its existing id (create or overwrite).
+  ///
+  /// Used by Google Drive restore to merge a backup back into Firestore while
+  /// preserving the original ids (so re-running a restore is idempotent).
+  Future<void> upsertProduct(Product product) =>
+      _products.doc(product.id).set(product.toMap());
 
   /// Seed demo data if collection is empty.
   Future<void> seedDemoDataIfEmpty() async {

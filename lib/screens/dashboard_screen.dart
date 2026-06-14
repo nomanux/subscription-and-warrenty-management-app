@@ -3,8 +3,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../core/providers/user_provider.dart';
+import '../features/auth/presentation/providers/google_auth_provider.dart';
+import '../features/auth/presentation/providers/user_auth_provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -155,10 +159,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 /// Coral gradient banner with greeting (rounded bottom corners).
-class _HeroHeader extends StatelessWidget {
+class _HeroHeader extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final topPadding = MediaQuery.of(context).padding.top;
+
+    // Get user data
+    final userAuthState = ref.watch(userAuthStateProvider);
+    final userAsync = ref.watch(userProvider);
+    final googleAccount = userAuthState.isGoogleLogin
+        ? ref.watch(googleAccountProvider).asData?.value
+        : null;
+
+    // Determine display name
+    String displayName = userAsync.when(
+      data: (user) =>
+          googleAccount?.displayName ?? user.name ?? 'User',
+      loading: () => 'User',
+      error: (_, _) => 'User',
+    );
+
     return Container(
       padding: EdgeInsets.fromLTRB(20, topPadding + 22, 20, 44),
       decoration: const BoxDecoration(
@@ -203,9 +223,9 @@ class _HeroHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
-                'Warranty Vault',
-                style: TextStyle(
+              Text(
+                'Hello $displayName',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,

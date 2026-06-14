@@ -2,12 +2,16 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../features/auth/presentation/providers/google_auth_provider.dart';
+import '../features/auth/presentation/providers/user_auth_provider.dart';
+import '../features/auth/presentation/screens/google_connect_screen.dart';
 import '../features/backup/presentation/screens/backup_screen.dart';
 import '../theme.dart';
 
-class AppDrawer extends StatelessWidget {
+class AppDrawer extends ConsumerWidget {
   const AppDrawer({
     super.key,
     required this.currentIndex,
@@ -21,7 +25,17 @@ class AppDrawer extends StatelessWidget {
   final void Function(int index) onNavigate;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAuthState = ref.watch(userAuthStateProvider);
+    final googleAccount = userAuthState.isGoogleLogin
+        ? ref.watch(googleAccountProvider).asData?.value
+        : null;
+
+    // Get display name and email
+    final displayName =
+        googleAccount?.displayName ?? userAuthState.username ?? 'Warantee User';
+    final email = googleAccount?.email ?? userAuthState.email ?? 'Local account';
+
     return Drawer(
       backgroundColor: kSurface,
       child: Column(
@@ -41,21 +55,29 @@ class AppDrawer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white.withValues(alpha: 0.22),
-                  child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedShield01,
-                      color: Colors.white,
-                      size: 28),
-                ),
+                // Show Google photo if available, otherwise icon
+                if (googleAccount?.photoUrl?.isNotEmpty ?? false)
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage:
+                        NetworkImage(googleAccount!.photoUrl!),
+                  )
+                else
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white.withValues(alpha: 0.22),
+                    child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedShield01,
+                        color: Colors.white,
+                        size: 28),
+                  ),
                 const SizedBox(height: 12),
-                const Text('Warranty Vault',
-                    style: TextStyle(
+                Text(displayName,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
-                Text('Local account',
+                Text(email,
                     style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 13)),
@@ -89,6 +111,19 @@ class AppDrawer extends StatelessWidget {
           ),
           const Divider(height: 24, indent: 16, endIndent: 16),
           _NavTile(
+            icon: HugeIcons.strokeRoundedGoogle,
+            label: 'Connect Google',
+            selected: false,
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const GoogleConnectScreen()),
+              );
+            },
+          ),
+          _NavTile(
             icon: HugeIcons.strokeRoundedCloudUpload,
             label: 'Backup & Restore',
             selected: false,
@@ -109,7 +144,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               showAboutDialog(
                 context: context,
-                applicationName: 'Warranty Vault',
+                applicationName: 'Warantee',
                 applicationVersion: '1.0.0',
                 applicationLegalese: 'Never lose a warranty again.',
               );

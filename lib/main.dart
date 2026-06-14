@@ -14,11 +14,15 @@ import 'package:warranty_vault/core/database/app_database.dart';
 
 import 'core/providers/app_providers.dart';
 import 'core/providers/theme_provider.dart';
+import 'features/auth/data/google_auth_service.dart';
+import 'features/backup/services/drive_backup_service.dart';
 import 'dev/seed_local.dart';
 import 'firebase_options.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/reminders_screen.dart';
+import 'screens/splash_screen.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -33,6 +37,10 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
+
+  // Google auth initialization is deferred until after login
+  // This prevents the account chooser from appearing on app startup
+  // It will be initialized when user signs in with Google
 
   // Seed demo data disabled temporarily while we debug
   // TODO: Re-enable after fixing initialization issue
@@ -74,21 +82,10 @@ Future<void> _seedFirestoreDemoData() async {
   final db = FirebaseFirestore.instance;
   final productsRef = db.collection('products');
 
-  // Check if we need to reseed (if products exist but have no receipt images)
-  final snapshot = await productsRef.limit(1).get();
-
-  if (snapshot.docs.isNotEmpty) {
-    // Check if the existing product has a receipt
-    final firstDoc = snapshot.docs.first.data();
-    if (firstDoc['receipt'] != null) {
-      // Already seeded with receipts, skip
-      return;
-    }
-    // Has products but no receipts - delete and reseed
-    final allDocs = await productsRef.get();
-    for (var doc in allDocs.docs) {
-      await doc.reference.delete();
-    }
+  // Delete all existing products to force reseed with shop information
+  final allDocs = await productsRef.get();
+  for (var doc in allDocs.docs) {
+    await doc.reference.delete();
   }
 
   // Color placeholder images as base64 PNG (1x1 pixels)
@@ -130,6 +127,36 @@ Future<void> _seedFirestoreDemoData() async {
     final imageUri = hasImage ? (images[name] ?? images['Instant Hotpot']!) : null;
 
     try {
+      final shopNames = {
+        'Instant Hotpot': 'Electronic City',
+        'MacBook Pro 14"': 'Apple Store',
+        'iPhone 15': 'Apple Store',
+        'Anker PowerBank': 'Amazon Electronics',
+        'Ceiling Fan': 'Singer Electronics',
+        'Office Chair': 'IKEA Store',
+        'Toyota Corolla': 'Toyota Showroom',
+        'Electric Kettle': 'Philips Showroom',
+        'Wrist Watch': 'Casio Store',
+        'Headphones': 'Sony Center',
+        'Blender': 'Nutribullet Store',
+        'Motorcycle': 'Honda Dealership',
+      };
+
+      final shopPhones = {
+        'Instant Hotpot': '+92-300-1234567',
+        'MacBook Pro 14"': '+92-300-2345678',
+        'iPhone 15': '+92-300-2345678',
+        'Anker PowerBank': '+92-300-3456789',
+        'Ceiling Fan': '+92-300-4567890',
+        'Office Chair': '+92-300-5678901',
+        'Toyota Corolla': '+92-300-6789012',
+        'Electric Kettle': '+92-300-7890123',
+        'Wrist Watch': '+92-300-8901234',
+        'Headphones': '+92-300-9012345',
+        'Blender': '+92-300-0123456',
+        'Motorcycle': '+92-300-1111111',
+      };
+
       final data = {
         'id': id,
         'productName': name,
@@ -145,6 +172,9 @@ Future<void> _seedFirestoreDemoData() async {
         'source': 'manual',
         'createdAt': now,
         'updatedAt': now,
+        'location': 'Main Store',
+        'shopName': shopNames[name],
+        'shopPhoneNumber': shopPhones[name],
       };
 
       // Only add receipt if item has image
@@ -179,13 +209,39 @@ class WarrantyVaultApp extends ConsumerWidget {
     final isDarkMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: 'Warranty Vault',
+      title: 'Warantee',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: const HomeShell(),
+      home: const _AppRoot(),
     );
+  }
+}
+
+class _AppRoot extends StatefulWidget {
+  const _AppRoot();
+
+  @override
+  State<_AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<_AppRoot> {
+  bool _showSplash = true;
+
+  @override
+  Widget build(BuildContext context) {
+    // Show splash then home (no login required)
+    if (_showSplash) {
+      return SplashScreen(
+        onComplete: () {
+          setState(() {
+            _showSplash = false;
+          });
+        },
+      );
+    }
+    return const HomeShell();
   }
 }
 
@@ -199,6 +255,23 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Google auth for Drive backup (silent, deferred from startup)
+    _initializeGoogleAuth();
+    // Daily auto-backup to Google Drive (no-op if not connected / done today).
+    DriveBackupService.instance.maybeAutoBackup();
+  }
+
+  Future<void> _initializeGoogleAuth() async {
+    try {
+      await GoogleAuthService.instance.init();
+    } catch (e) {
+      debugPrint('Google auth initialization error (non-fatal): $e');
+    }
+  }
+
   void _go(int index) => setState(() => _index = index);
 
   @override
@@ -206,11 +279,7 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       DashboardScreen(onNavigate: _go),
       const ProductsScreen(),
-      const _PlaceholderScreen(
-        title: 'Reminders',
-        icon: HugeIcons.strokeRoundedNotification01,
-        message: 'Expiry reminders will appear here.',
-      ),
+      const RemindersScreen(),
       ProfileScreen(onNavigate: _go),
     ];
 
@@ -284,47 +353,6 @@ class _NavItem extends StatelessWidget {
                     fontSize: 11,
                     fontWeight:
                         selected ? FontWeight.w700 : FontWeight.w500)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Simple "coming soon" screen for tabs not yet built (Reminders).
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen({
-    required this.title,
-    required this.icon,
-    required this.message,
-  });
-
-  final String title;
-  final List<List<dynamic>> icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: kPrimary.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              child: HugeIcon(icon: icon, color: kPrimary, size: 36),
-            ),
-            const SizedBox(height: 16),
-            Text(title,
-                style: const TextStyle(
-                    color: kInk, fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text(message, style: const TextStyle(color: kMuted, fontSize: 14)),
           ],
         ),
       ),

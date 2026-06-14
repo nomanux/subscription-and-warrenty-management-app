@@ -144,7 +144,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               Expanded(
                 child: ValueListenableBuilder<WarrantyStatus?>(
                   valueListenable: selectedFilter,
-                  builder: (context, _, __) {
+                  builder: (context, _, _) {
                     final filteredForDisplay = _filterProducts(products);
                     return filteredForDisplay.isEmpty
                         ? _NoResultsState(

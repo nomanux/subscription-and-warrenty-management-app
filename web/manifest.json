@@ -1,6 +1,6 @@
 {
-    "name": "warranty_vault",
-    "short_name": "warranty_vault",
+    "name": "Warantee",
+    "short_name": "Warantee",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

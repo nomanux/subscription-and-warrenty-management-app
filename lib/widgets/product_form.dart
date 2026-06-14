@@ -62,11 +62,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   @override
   void initState() {
     super.initState();
-    _loadLocations();
     final p = widget.initial;
     _name = TextEditingController(text: p?.productName ?? '');
     _brand = TextEditingController(text: p?.brand ?? '');
-    _location = TextEditingController(text: p?.location ?? 'Home');
+    _location = TextEditingController(text: p?.location ?? '');
     _shopName = TextEditingController(text: p?.shopName ?? '');
     _shopPhoneNumber = TextEditingController(text: p?.shopPhoneNumber ?? '');
     _notes = TextEditingController(text: p?.notes ?? '');
@@ -79,13 +78,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
     _category = p?.category ?? kCategories.first;
     _receipt = p?.receipt;
+    _loadLocations(p?.location);
   }
 
-  Future<void> _loadLocations() async {
+  Future<void> _loadLocations([String? existingLocation]) async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getStringList('locations');
-    if (saved != null && saved.isNotEmpty) {
-      setState(() => _locations = saved);
+    final locations = saved ?? ['Home', 'Office'];
+    // Add existing location if editing and not already in list
+    if (existingLocation != null && existingLocation.isNotEmpty && !locations.contains(existingLocation)) {
+      locations.add(existingLocation);
+    }
+    if (mounted) {
+      setState(() => _locations = locations);
     }
   }
 
@@ -528,12 +533,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 title: 'Warranty Card',
                 onAdd: () => _pickImage(type: 'warranty'),
                 hasImage: _warrantyCardUri != null,
+                imageUri: _warrantyCardUri,
               ),
               const SizedBox(height: 8),
               _ExpandableDocumentItem(
                 title: 'Visiting Card',
                 onAdd: () => _pickImage(type: 'visiting'),
                 hasImage: _visitingCardUri != null,
+                imageUri: _visitingCardUri,
               ),
               const SizedBox(height: 24),
               if (_error != null) ...[
@@ -708,11 +715,13 @@ class _ExpandableDocumentItem extends StatelessWidget {
     required this.title,
     required this.onAdd,
     required this.hasImage,
+    this.imageUri,
   });
 
   final String title;
   final VoidCallback onAdd;
   final bool hasImage;
+  final String? imageUri;
 
   @override
   Widget build(BuildContext context) {
@@ -728,109 +737,53 @@ class _ExpandableDocumentItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: kInk, fontSize: 14)),
-                const Spacer(),
-                if (hasImage)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kPrimary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      '✓ Added',
-                      style: TextStyle(
+                Row(
+                  children: [
+                    Text(title,
+                        style:
+                            const TextStyle(color: kInk, fontSize: 14)),
+                    const Spacer(),
+                    if (hasImage)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kPrimary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '✓ Added',
+                          style: TextStyle(
+                            color: kPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    else
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedAdd01,
                         color: kPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        size: 20,
                       ),
-                    ),
-                  )
-                else
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedAdd01,
-                    color: kPrimary,
-                    size: 20,
+                  ],
+                ),
+                if (hasImage && imageUri != null && imageUri!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  ReceiptImage(
+                    uri: imageUri!,
+                    width: 100,
+                    height: 100,
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                ],
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A text area for notes (multi-line input).
-class _NotesField extends StatelessWidget {
-  const _NotesField({required this.controller});
-
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      maxLines: 3,
-      minLines: 2,
-      style: const TextStyle(fontSize: 14, color: kInk),
-      decoration: InputDecoration(
-        hintText: 'Add any notes about the warranty...',
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 12,
-        ),
-        isDense: true,
-      ),
-    );
-  }
-}
-
-/// A full-width "add receipt" upload area.
-class _UploadButton extends StatelessWidget {
-  const _UploadButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFCBD5E1)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedCamera01,
-                color: kPrimary,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: kPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
           ),
         ),
       ),

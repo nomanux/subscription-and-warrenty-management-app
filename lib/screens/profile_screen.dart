@@ -10,8 +10,12 @@ import 'package:image_picker/image_picker.dart';
 
 import '../core/providers/theme_provider.dart';
 import '../core/providers/user_provider.dart';
+import '../features/auth/presentation/providers/google_auth_provider.dart';
+import '../features/auth/presentation/providers/user_auth_provider.dart';
+import '../features/auth/presentation/screens/google_connect_screen.dart';
 import '../features/backup/presentation/screens/backup_screen.dart';
 import '../models/product.dart';
+import '../screens/categories_screen.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
 
@@ -303,6 +307,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final topPadding = MediaQuery.of(context).padding.top;
     final isDarkMode = ref.watch(themeModeProvider);
+    final userAuthState = ref.watch(userAuthStateProvider);
+    // Always check for connected Google account
+    final googleAccount = ref.watch(googleAccountProvider).asData?.value;
     final userAsync = ref.watch(userProvider);
 
     return Scaffold(
@@ -332,6 +339,13 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       userAsync.when(
                         data: (user) {
+                          if (googleAccount?.photoUrl?.isNotEmpty ?? false) {
+                            return CircleAvatar(
+                              radius: 40,
+                              backgroundImage:
+                                  NetworkImage(googleAccount!.photoUrl!),
+                            );
+                          }
                           if (user.profileImagePath != null &&
                               user.profileImagePath!.isNotEmpty &&
                               File(user.profileImagePath!).existsSync()) {
@@ -391,29 +405,33 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 userAsync.when(
-                  data: (user) => Column(
-                    children: [
-                      Text(
-                        user.name ?? 'Warranty Vault User',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
+                  data: (user) {
+                    final displayName = googleAccount?.displayName ?? user.name ?? 'Warantee User';
+                    final displayEmail = googleAccount?.email ?? userAuthState.email ?? user.phoneNumber ?? 'Tap Edit Profile';
+                    return Column(
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      Text(
-                        user.phoneNumber ?? 'Local account',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
+                        Text(
+                          displayEmail,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 13,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                   loading: () => Column(
                     children: [
                       const Text(
-                        'Warranty Vault User',
+                        'Warantee User',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 19,
@@ -421,7 +439,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Local account',
+                        'Loading...',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 13,
@@ -432,7 +450,7 @@ class ProfileScreen extends ConsumerWidget {
                   error: (_, _) => Column(
                     children: [
                       const Text(
-                        'Warranty Vault User',
+                        'Warantee User',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 19,
@@ -440,7 +458,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Local account',
+                        'Tap Edit Profile',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 13,
@@ -480,12 +498,30 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _SettingTile(
+                  icon: HugeIcons.strokeRoundedGoogle,
+                  title: 'Google Account',
+                  subtitle: googleAccount?.email ?? 'Connect for backup',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GoogleConnectScreen()),
+                  ),
+                ),
+                _SettingTile(
                   icon: HugeIcons.strokeRoundedCloudUpload,
                   title: 'Backup & Restore',
                   subtitle: 'Google Drive',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const BackupScreen()),
+                  ),
+                ),
+                _SettingTile(
+                  icon: HugeIcons.strokeRoundedTag01,
+                  title: 'Categories',
+                  subtitle: 'Manage warranty categories',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CategoriesScreen()),
                   ),
                 ),
                 _SettingTile(
@@ -506,9 +542,101 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: 'Version 1.0.0',
                   onTap: () => showAboutDialog(
                     context: context,
-                    applicationName: 'Warranty Vault',
+                    applicationName: 'Warantee',
                     applicationVersion: '1.0.0',
                     applicationLegalese: 'Never lose a warranty again.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Logout button
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: kMuted.withValues(alpha: 0.1)),
+                    ),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () async {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Logout'),
+                            content: const Text('Are you sure you want to logout?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(ctx);
+                                  await ref.read(userAuthStateProvider.notifier).logout();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                      '/',
+                                      (route) => false,
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  'Logout',
+                                  style: TextStyle(color: Color(0xFFDC2626)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFDC2626).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: HugeIcon(
+                                icon: HugeIcons.strokeRoundedLogout01,
+                                color: Color(0xFFDC2626),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Logout',
+                                    style: TextStyle(
+                                      color: Color(0xFFDC2626),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Sign out of your account',
+                                    style: TextStyle(
+                                      color: kMuted,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: kMuted,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

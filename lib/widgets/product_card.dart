@@ -272,8 +272,9 @@ class _ExpandedDetails extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onViewDetails ?? () {},
               style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimary,
-                foregroundColor: Colors.white,
+                backgroundColor: kPrimary.withValues(alpha: 0.1),
+                foregroundColor: kPrimary,
+                elevation: 0,
               ),
               child: const Text('View Details'),
             ),

@@ -13,7 +13,28 @@
           "package_name": "com.warrantyvault.warranty_vault"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "916872583271-imp8psp6k6o8cee73labhgk451d8oak0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warrantyvault.warranty_vault",
+            "certificate_hash": "a7beb0942c3ecb67c3c74c1f07e4a5e91503f020"
+          }
+        },
+        {
+          "client_id": "916872583271-v50v7rk38qqdc1ovt08j23tpqbjb877d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warrantyvault.warranty_vault",
+            "certificate_hash": "dbdff323e1581de2c75e9e1f8c07fac53171b8c5"
+          }
+        },
+        {
+          "client_id": "916872583271-nkd12fl8apd2gdbe4d36v21s6m16ee3d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBwNPHO-pgWSrZDXn60_ZN01OF5Jo28Kso"
@@ -21,7 +42,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "916872583271-i9sljpacgd74pgbmju6gk90bfbqf5ei1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

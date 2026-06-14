@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/product.dart';
 import '../services/product_service.dart';
@@ -138,18 +139,12 @@ class ProductDetailScreen extends StatelessWidget {
                         icon: HugeIcons.strokeRoundedShield01,
                         label: 'Expires',
                         value: _fmt(product.expiryDate)),
-                    if (product.shopName != null &&
-                        product.shopName!.isNotEmpty)
+                    if (product.location != null &&
+                        product.location!.isNotEmpty)
                       _InfoRow(
-                          icon: HugeIcons.strokeRoundedShoppingCart01,
-                          label: 'Shop name',
-                          value: product.shopName!),
-                    if (product.shopPhoneNumber != null &&
-                        product.shopPhoneNumber!.isNotEmpty)
-                      _InfoRow(
-                          icon: HugeIcons.strokeRoundedCall02,
-                          label: 'Shop phone',
-                          value: product.shopPhoneNumber!),
+                          icon: HugeIcons.strokeRoundedMapPin,
+                          label: 'Location',
+                          value: product.location!),
                     if (product.serialNumber != null &&
                         product.serialNumber!.isNotEmpty)
                       _InfoRow(
@@ -165,6 +160,103 @@ class ProductDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              // Shop Information section
+              if (product.shopName != null && product.shopName!.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text('Shop Information',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: kInk)),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kSurface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shop Name
+                      Row(
+                        children: [
+                          const Icon(Icons.store, color: kPrimary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Shop Name',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: kMuted,
+                                        fontWeight: FontWeight.w500)),
+                                const SizedBox(height: 4),
+                                Text(product.shopName ?? 'N/A',
+                                    style: const TextStyle(
+                                        fontSize: 14,
+                                        color: kInk,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Shop Phone Number with call button
+                      if (product.shopPhoneNumber != null &&
+                          product.shopPhoneNumber!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone, color: kPrimary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Phone Number',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: kMuted,
+                                          fontWeight: FontWeight.w500)),
+                                  const SizedBox(height: 4),
+                                  Text(product.shopPhoneNumber ?? 'N/A',
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          color: kInk,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedCall,
+                                color: kPrimary,
+                                size: 22,
+                              ),
+                              onPressed: () async {
+                                final phoneNumber = product.shopPhoneNumber;
+                                if (phoneNumber != null &&
+                                    phoneNumber.isNotEmpty) {
+                                  final uri =
+                                      Uri(scheme: 'tel', path: phoneNumber);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri);
+                                  }
+                                }
+                              },
+                              tooltip: 'Call shop',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
               // Receipt section - always show
               const SizedBox(height: 20),
               const Text('Receipt',
@@ -201,6 +293,98 @@ class ProductDetailScreen extends StatelessWidget {
                         const SizedBox(height: 12),
                         const Text(
                           'No Receipt Image',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Warranty Card section
+              const SizedBox(height: 24),
+              const Text('Warranty Card',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              const SizedBox(height: 10),
+              if (product.warrantyCard?.uri != null && product.warrantyCard!.uri.isNotEmpty)
+                ReceiptImage(
+                  uri: product.warrantyCard!.uri,
+                  width: double.infinity,
+                  height: 220,
+                  borderRadius: BorderRadius.circular(16),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFF3F4F6),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.card_giftcard,
+                          size: 48,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No Warranty Card',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Visiting Card section
+              const SizedBox(height: 24),
+              const Text('Visiting Card',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: kInk)),
+              const SizedBox(height: 10),
+              if (product.visitingCard?.uri != null && product.visitingCard!.uri.isNotEmpty)
+                ReceiptImage(
+                  uri: product.visitingCard!.uri,
+                  width: double.infinity,
+                  height: 220,
+                  borderRadius: BorderRadius.circular(16),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFF3F4F6),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.contact_mail,
+                          size: 48,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'No Visiting Card',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
