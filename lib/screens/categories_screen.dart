@@ -50,114 +50,16 @@ class CategoriesScreen extends ConsumerWidget {
   }
 
   void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
-    _showCategoryDialog(context, ref, null);
+    showDialog(
+      context: context,
+      builder: (_) => _CategoryDialog(category: null, ref: ref),
+    );
   }
 
   void _showEditCategoryDialog(BuildContext context, WidgetRef ref, WCategory category) {
-    _showCategoryDialog(context, ref, category);
-  }
-
-  void _showCategoryDialog(BuildContext context, WidgetRef ref, WCategory? category) {
-    final nameController = TextEditingController(text: category?.name ?? '');
-    String selectedIcon = category?.iconName ?? 'strokeRoundedShoppingBag01';
-
     showDialog(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (_, setState) => AlertDialog(
-          title: Text(category == null ? 'Add Category' : 'Edit', style: const TextStyle(fontSize: 18)),
-          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Electronics',
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: OutlineInputBorder(),
-                  ),
-                  style: const TextStyle(fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Icon',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                  ),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _iconOptions.length,
-                  itemBuilder: (_, index) {
-                    final iconName = _iconOptions[index];
-                    final icon = _getIconFromName(iconName);
-                    final isSelected = selectedIcon == iconName;
-
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedIcon = iconName),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: isSelected ? kPrimary : Colors.grey.shade300,
-                            width: isSelected ? 2 : 1,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                          color: isSelected ? kPrimary.withValues(alpha: 0.1) : null,
-                        ),
-                        child: Center(
-                          child: HugeIcon(
-                            icon: icon,
-                            color: isSelected ? kPrimary : kMuted,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel', style: TextStyle(fontSize: 12)),
-            ),
-            FilledButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                if (name.isEmpty) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Enter name')),
-                  );
-                  return;
-                }
-
-                final newCategory = WCategory(name: name, iconName: selectedIcon);
-
-                if (category == null) {
-                  ref.read(categoriesProvider.notifier).addCategory(newCategory);
-                } else {
-                  ref.read(categoriesProvider.notifier).updateCategory(category.name, newCategory);
-                }
-
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Save', style: TextStyle(fontSize: 12)),
-            ),
-          ],
-        ),
-      ),
+      builder: (_) => _CategoryDialog(category: category, ref: ref),
     );
   }
 }
@@ -370,5 +272,136 @@ List<List<dynamic>> _getIconFromName(String iconName) {
       return HugeIcons.strokeRoundedMoney02;
     default:
       return HugeIcons.strokeRoundedShoppingBag01;
+  }
+}
+
+class _CategoryDialog extends StatefulWidget {
+  const _CategoryDialog({
+    required this.category,
+    required this.ref,
+  });
+
+  final WCategory? category;
+  final WidgetRef ref;
+
+  @override
+  State<_CategoryDialog> createState() => _CategoryDialogState();
+}
+
+class _CategoryDialogState extends State<_CategoryDialog> {
+  late TextEditingController nameController;
+  late String selectedIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.category?.name ?? '');
+    selectedIcon = widget.category?.iconName ?? 'strokeRoundedShoppingBag01';
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.category == null ? 'Add Category' : 'Edit',
+        style: const TextStyle(fontSize: 18),
+      ),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                hintText: 'Electronics',
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                border: OutlineInputBorder(),
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Icon',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+              ),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _iconOptions.length,
+              itemBuilder: (_, index) {
+                final iconName = _iconOptions[index];
+                final icon = _getIconFromName(iconName);
+                final isSelected = selectedIcon == iconName;
+
+                return GestureDetector(
+                  onTap: () => setState(() => selectedIcon = iconName),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isSelected ? kPrimary : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? kPrimary.withValues(alpha: 0.1) : null,
+                    ),
+                    child: Center(
+                      child: HugeIcon(
+                        icon: icon,
+                        color: isSelected ? kPrimary : kMuted,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+        ),
+        FilledButton(
+          onPressed: () {
+            final name = nameController.text.trim();
+            if (name.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Enter name')),
+              );
+              return;
+            }
+
+            final newCategory = WCategory(name: name, iconName: selectedIcon);
+
+            if (widget.category == null) {
+              widget.ref.read(categoriesProvider.notifier).addCategory(newCategory);
+            } else {
+              widget.ref.read(categoriesProvider.notifier).updateCategory(widget.category!.name, newCategory);
+            }
+
+            Navigator.pop(context);
+          },
+          child: const Text('Save', style: TextStyle(fontSize: 12)),
+        ),
+      ],
+    );
   }
 }
