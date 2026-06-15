@@ -52,6 +52,7 @@ class CategoriesScreen extends ConsumerWidget {
   void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => _CategoryDialog(category: null, ref: ref),
     );
   }
@@ -59,6 +60,7 @@ class CategoriesScreen extends ConsumerWidget {
   void _showEditCategoryDialog(BuildContext context, WidgetRef ref, WCategory category) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (_) => _CategoryDialog(category: category, ref: ref),
     );
   }
