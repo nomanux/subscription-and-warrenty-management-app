@@ -309,101 +309,107 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.category == null ? 'Add Category' : 'Edit',
-        style: const TextStyle(fontSize: 18),
-      ),
-      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      content: SingleChildScrollView(
+    return Dialog(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              widget.category == null ? 'Add Category' : 'Edit Category',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'Electronics',
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'Category Name',
+                hintText: 'e.g., Electronics',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Select Icon:',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Icon',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-              ),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _iconOptions.length,
-              itemBuilder: (_, index) {
-                final iconName = _iconOptions[index];
-                final icon = _getIconFromName(iconName);
-                final isSelected = selectedIcon == iconName;
+            SizedBox(
+              height: 200,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                ),
+                itemCount: _iconOptions.length,
+                itemBuilder: (_, index) {
+                  final iconName = _iconOptions[index];
+                  final icon = _getIconFromName(iconName);
+                  final isSelected = selectedIcon == iconName;
 
-                return GestureDetector(
-                  onTap: () => setState(() => selectedIcon = iconName),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? kPrimary : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1,
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedIcon = iconName),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected ? kPrimary : Colors.grey.shade300,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        color: isSelected ? kPrimary.withValues(alpha: 0.1) : Colors.transparent,
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                      color: isSelected ? kPrimary.withValues(alpha: 0.1) : null,
-                    ),
-                    child: Center(
-                      child: HugeIcon(
-                        icon: icon,
-                        color: isSelected ? kPrimary : kMuted,
-                        size: 20,
+                      child: Center(
+                        child: HugeIcon(
+                          icon: icon,
+                          color: isSelected ? kPrimary : kPrimary.withValues(alpha: 0.5),
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a category name')),
+                      );
+                      return;
+                    }
+
+                    final newCategory = WCategory(name: name, iconName: selectedIcon);
+
+                    if (widget.category == null) {
+                      widget.ref.read(categoriesProvider.notifier).addCategory(newCategory);
+                    } else {
+                      widget.ref.read(categoriesProvider.notifier).updateCategory(widget.category!.name, newCategory);
+                    }
+
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(fontSize: 12)),
-        ),
-        FilledButton(
-          onPressed: () {
-            final name = nameController.text.trim();
-            if (name.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Enter name')),
-              );
-              return;
-            }
-
-            final newCategory = WCategory(name: name, iconName: selectedIcon);
-
-            if (widget.category == null) {
-              widget.ref.read(categoriesProvider.notifier).addCategory(newCategory);
-            } else {
-              widget.ref.read(categoriesProvider.notifier).updateCategory(widget.category!.name, newCategory);
-            }
-
-            Navigator.pop(context);
-          },
-          child: const Text('Save', style: TextStyle(fontSize: 12)),
-        ),
-      ],
     );
   }
 }
