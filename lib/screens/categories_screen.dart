@@ -64,7 +64,7 @@ class CategoriesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (_, setState) => AlertDialog(
           title: Text(category == null ? 'Add Category' : 'Edit', style: const TextStyle(fontSize: 18)),
           contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           content: SingleChildScrollView(
