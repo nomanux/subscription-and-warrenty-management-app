@@ -64,7 +64,7 @@ class CategoriesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (_, setState) => AlertDialog(
+        builder: (dialogContext, setState) => AlertDialog(
           title: Text(category == null ? 'Add Category' : 'Edit', style: const TextStyle(fontSize: 18)),
           contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           content: SingleChildScrollView(
@@ -97,7 +97,7 @@ class CategoriesScreen extends ConsumerWidget {
                   ),
                   shrinkWrap: true,
                   itemCount: _iconOptions.length,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (itemContext, index) {
                     final iconName = _iconOptions[index];
                     final icon = _getIconFromName(iconName);
                     final isSelected = selectedIcon == iconName;
@@ -136,7 +136,7 @@ class CategoriesScreen extends ConsumerWidget {
               onPressed: () {
                 final name = nameController.text.trim();
                 if (name.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(ctx).showSnackBar(
                     const SnackBar(content: Text('Enter name')),
                   );
                   return;
