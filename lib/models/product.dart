@@ -5,6 +5,8 @@
 /// created by the old app load here without migration.
 library;
 
+import 'package:hugeicons/hugeicons.dart';
+
 /// The six product categories, in display order.
 const List<String> kCategories = [
   'Electronics',
@@ -14,6 +16,16 @@ const List<String> kCategories = [
   'Vehicle',
   'Others',
 ];
+
+/// Icon mapping for each category.
+final Map<String, List<List<dynamic>>> kCategoryIcons = {
+  'Electronics': HugeIcons.strokeRoundedSmartPhone01,
+  'Home Appliances': HugeIcons.strokeRoundedHome01,
+  'Kitchen Appliances': HugeIcons.strokeRoundedKitchenUtensils,
+  'Furniture': HugeIcons.strokeRoundedChair01,
+  'Vehicle': HugeIcons.strokeRoundedCar01,
+  'Others': HugeIcons.strokeRoundedPackage01,
+};
 
 /// Warranty lifecycle status, derived from the expiry date.
 enum WarrantyStatus {

@@ -436,6 +436,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     final selected = _category == cat;
                     return _CategoryButton(
                       label: cat,
+                      icon: kCategoryIcons[cat]!,
                       selected: selected,
                       onTap: () => setState(() => _category = cat),
                     );
@@ -658,11 +659,13 @@ class _FormField extends StatelessWidget {
 class _CategoryButton extends StatelessWidget {
   const _CategoryButton({
     required this.label,
+    required this.icon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final List<List<dynamic>> icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -686,7 +689,7 @@ class _CategoryButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             HugeIcon(
-              icon: HugeIcons.strokeRoundedShoppingBag01,
+              icon: icon,
               color: selected ? kPrimary : kMuted,
               size: 24,
             ),

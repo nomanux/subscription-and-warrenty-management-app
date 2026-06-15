@@ -17,6 +17,17 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+
+    // Workaround for androidx.window compatibility with Android 9
+    configurations.all {
+        resolutionStrategy {
+            eachDependency {
+                if (requested.group == "androidx.window" && requested.name == "window") {
+                    useVersion("1.0.0")
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
