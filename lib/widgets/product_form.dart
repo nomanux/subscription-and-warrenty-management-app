@@ -8,6 +8,7 @@ library;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -182,18 +183,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       final picker = ImagePicker();
       final file = await picker.pickImage(
         source: source,
-        imageQuality: type == 'product' ? 80 : 70,
+        imageQuality: 100,
       );
       if (file == null) return;
-      final bytes = await file.readAsBytes();
 
-      // Check file size - max 400KB for base64 encoded image
-      if (bytes.length > 400000) {
-        setState(() => _error = 'Image too large. Max 400KB. Please choose a smaller image or use lower quality.');
-        return;
+      // Compress image to standard size
+      var bytes = await file.readAsBytes();
+      final compressedFile = await FlutterImageCompress.compressAndGetFile(
+        file.path,
+        '${file.path}_compressed.jpg',
+        quality: 80,
+        minWidth: 1024,
+        minHeight: 1024,
+      );
+
+      if (compressedFile != null) {
+        bytes = await compressedFile.readAsBytes();
       }
 
-      final mime = file.mimeType ?? _guessMime(file.name);
+      final mime = _guessMime(file.name);
       final uri = 'data:$mime;base64,${base64Encode(bytes)}';
       setState(() {
         if (type == 'receipt') {
@@ -207,7 +215,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         }
       });
     } catch (e) {
-      setState(() => _error = 'Could not load image: $e');
+      setState(() => _error = 'Could not process image: $e');
     }
   }
 
