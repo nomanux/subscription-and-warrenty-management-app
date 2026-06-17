@@ -536,54 +536,29 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 1,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        value: _durationUnit,
-                        items: [
-                          DropdownMenuItem(
-                            value: 'months',
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                'Months',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: kInk,
-                                ),
-                              ),
-                            ),
+                    child: _StandardDropdown<String>(
+                      value: _durationUnit,
+                      items: [
+                        DropdownMenuItem(
+                          value: 'months',
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text('Months'),
                           ),
-                          DropdownMenuItem(
-                            value: 'years',
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                'Years',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: kInk,
-                                ),
-                              ),
-                            ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'years',
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text('Years'),
                           ),
-                        ],
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() => _durationUnit = v);
-                          }
-                        },
-                      ),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) {
+                          setState(() => _durationUnit = v);
+                        }
+                      },
                     ),
                   ),
                 ],
