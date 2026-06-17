@@ -462,27 +462,33 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     ..._locations.map(
                       (e) => DropdownMenuItem(
                         value: e,
-                        child: Text(
-                          e,
-                          style: const TextStyle(fontSize: 14),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            e,
+                            style: const TextStyle(fontSize: 14, color: kInk),
+                          ),
                         ),
                       ),
                     ),
                     DropdownMenuItem(
                       value: '__add__',
-                      child: Row(
-                        children: [
-                          HugeIcon(
-                            icon: HugeIcons.strokeRoundedAdd01,
-                            color: kPrimary,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Add new location',
-                            style: TextStyle(color: kPrimary, fontSize: 14),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            HugeIcon(
+                              icon: HugeIcons.strokeRoundedAdd01,
+                              color: kPrimary,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Add new location',
+                              style: TextStyle(color: kPrimary, fontSize: 14),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -560,16 +566,22 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         items: [
                           DropdownMenuItem(
                             value: 'months',
-                            child: Text(
-                              'Months',
-                              style: const TextStyle(fontSize: 14),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Months',
+                                style: const TextStyle(fontSize: 14, color: kInk),
+                              ),
                             ),
                           ),
                           DropdownMenuItem(
                             value: 'years',
-                            child: Text(
-                              'Years',
-                              style: const TextStyle(fontSize: 14),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Years',
+                                style: const TextStyle(fontSize: 14, color: kInk),
+                              ),
                             ),
                           ),
                         ],
