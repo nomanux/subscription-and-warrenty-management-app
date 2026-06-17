@@ -1477,26 +1477,36 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
 
     final pos = box.localToGlobal(Offset.zero);
     final menuItems = widget.items
-        .map((item) => PopupMenuItem<T>(
-              value: item.value,
-              height: 44,
-              child: Container(
-                width: box.size.width - 28,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  color: Colors.transparent,
-                ),
-                child: DefaultTextStyle(
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: kInk,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  child: item.child,
-                ),
+        .map((item) {
+          final isSelected = item.value == widget.value;
+          return PopupMenuItem<T>(
+            value: item.value,
+            height: 44,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                color: isSelected ? kPrimary.withValues(alpha: 0.12) : Colors.transparent,
               ),
-            ))
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DefaultTextStyle(
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isSelected ? kPrimary : kInk,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                      child: item.child,
+                    ),
+                  ),
+                  if (isSelected)
+                    const Icon(Icons.check, color: kPrimary, size: 18),
+                ],
+              ),
+            ),
+          );
+        })
         .toList();
 
     showMenu<T>(
