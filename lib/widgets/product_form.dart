@@ -186,6 +186,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       );
       if (file == null) return;
       final bytes = await file.readAsBytes();
+
+      // Check file size - max 400KB for base64 encoded image
+      if (bytes.length > 400000) {
+        setState(() => _error = 'Image too large. Max 400KB. Please choose a smaller image or use lower quality.');
+        return;
+      }
+
       final mime = file.mimeType ?? _guessMime(file.name);
       final uri = 'data:$mime;base64,${base64Encode(bytes)}';
       setState(() {
