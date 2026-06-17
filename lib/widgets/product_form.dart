@@ -1479,11 +1479,22 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
     final menuItems = widget.items
         .map((item) => PopupMenuItem<T>(
               value: item.value,
-              height: 40,
+              height: 44,
               child: Container(
                 width: box.size.width - 28,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: item.child,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: Colors.transparent,
+                ),
+                child: DefaultTextStyle(
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: kInk,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  child: item.child,
+                ),
               ),
             ))
         .toList();
@@ -1492,7 +1503,7 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
       context: context,
       position: RelativeRect.fromLTRB(
         pos.dx,
-        pos.dy + box.size.height + 4,
+        pos.dy + box.size.height + 8,
         pos.dx + box.size.width,
         0,
       ),
@@ -1500,8 +1511,9 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
       elevation: 8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: kPrimary, width: 1.5),
+        side: BorderSide(color: kPrimary.withValues(alpha: 0.3), width: 1),
       ),
+      color: Colors.white,
     ).then((value) {
       if (value != null) {
         widget.onChanged(value);
