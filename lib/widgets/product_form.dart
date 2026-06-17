@@ -446,10 +446,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: DropdownButton<String>(
                   isExpanded: true,
@@ -459,7 +460,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       : _location.text,
                   items: [
                     ..._locations.map(
-                      (e) => DropdownMenuItem(value: e, child: Text(e)),
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
                     ),
                     DropdownMenuItem(
                       value: '__add__',
@@ -473,7 +480,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           const SizedBox(width: 8),
                           const Text(
                             'Add new location',
-                            style: TextStyle(color: kPrimary),
+                            style: TextStyle(color: kPrimary, fontSize: 14),
                           ),
                         ],
                       ),
@@ -540,10 +547,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   Expanded(
                     flex: 1,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: DropdownButton<String>(
                         isExpanded: true,
@@ -552,11 +560,17 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         items: [
                           DropdownMenuItem(
                             value: 'months',
-                            child: Text('Months'),
+                            child: Text(
+                              'Months',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
                           DropdownMenuItem(
                             value: 'years',
-                            child: Text('Years'),
+                            child: Text(
+                              'Years',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
                         ],
                         onChanged: (v) {
