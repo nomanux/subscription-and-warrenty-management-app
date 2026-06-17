@@ -93,7 +93,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final saved = prefs.getStringList('locations');
     final locations = saved ?? ['Home', 'Office'];
     // Add existing location if editing and not already in list
-    if (existingLocation != null && existingLocation.isNotEmpty && !locations.contains(existingLocation)) {
+    if (existingLocation != null &&
+        existingLocation.isNotEmpty &&
+        !locations.contains(existingLocation)) {
       locations.add(existingLocation);
     }
     if (mounted) {
@@ -156,7 +158,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage({required String type, ImageSource source = ImageSource.gallery}) async {
+  Future<void> _pickImage({
+    required String type,
+    ImageSource source = ImageSource.gallery,
+  }) async {
     setState(() => _error = null);
     try {
       final picker = ImagePicker();
@@ -288,7 +293,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         receipt: finalReceipt,
         location: _location.text.trim().isEmpty ? null : _location.text.trim(),
         shopName: _shopName.text.trim().isEmpty ? null : _shopName.text.trim(),
-        shopPhoneNumber: _shopPhoneNumber.text.trim().isEmpty ? null : _shopPhoneNumber.text.trim(),
+        shopPhoneNumber: _shopPhoneNumber.text.trim().isEmpty
+            ? null
+            : _shopPhoneNumber.text.trim(),
         visitingCard: finalVisitingCard,
         warrantyCard: finalWarrantyCard,
         productImage: finalProductImage,
@@ -405,7 +412,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 60,
+                height: 30,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: kCategories.length,
@@ -564,9 +571,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 decoration: BoxDecoration(
                   color: kPrimary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: kPrimary.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: kPrimary.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -643,9 +648,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 title: 'Photos & Documents',
                 subtitle: '${_getFilledMediaCount()}/4 items added',
                 isExpanded: _showPhotosSection,
-                onToggle: () => setState(
-                  () => _showPhotosSection = !_showPhotosSection,
-                ),
+                onToggle: () =>
+                    setState(() => _showPhotosSection = !_showPhotosSection),
                 child: _showPhotosSection
                     ? Column(
                         children: [
@@ -867,38 +871,40 @@ class _CategoryPillState extends State<_CategoryPill> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? kPrimary.withValues(alpha: 0.12)
-                : (_isHovering
-                    ? const Color(0xFFF0F4F1)
-                    : Colors.transparent),
+                ? const Color.fromARGB(23, 64, 255, 200) // rgba(64, 255, 200, 0.09)
+                : (_isHovering ? const Color(0xFFF5F5F5) : Colors.transparent),
             border: Border.all(
               color: isSelected
-                  ? kPrimary
+                  ? const Color.fromARGB(112, 17, 176, 130) // rgba(17, 176, 130, 0.44)
                   : (_isHovering
-                      ? const Color(0xFFD1D5D0)
-                      : const Color(0xFFE2E8F0)),
-              width: 1.5,
+                        ? const Color(0xFFD0D0D0)
+                        : const Color(0xFFE8E8E8)), // light gray
+              width: 1,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(127),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               HugeIcon(
                 icon: widget.icon,
-                color: isSelected ? kPrimary : const Color(0xFF94A3B8),
+                color: isSelected
+                    ? const Color(0xFF11B082) // kPrimary green
+                    : const Color(0xFF5E5E5E), // hsla(0, 0%, 37%, 1)
                 size: 18,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 widget.label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected ? kPrimary : const Color(0xFF64748B),
+                  color: isSelected
+                      ? const Color(0xFF11B082) // kPrimary green
+                      : const Color(0xFF5E5E5E), // hsla(0, 0%, 37%, 1)
                   letterSpacing: -0.2,
                 ),
               ),
@@ -943,9 +949,10 @@ class _ExpandableDocumentItem extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(title,
-                        style:
-                            const TextStyle(color: kInk, fontSize: 14)),
+                    Text(
+                      title,
+                      style: const TextStyle(color: kInk, fontSize: 14),
+                    ),
                     const Spacer(),
                     if (hasImage)
                       Container(
@@ -1011,11 +1018,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            HugeIcon(
-              icon: icon,
-              color: kPrimary,
-              size: 20,
-            ),
+            HugeIcon(icon: icon, color: kPrimary, size: 20),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1031,10 +1034,7 @@ class _SectionHeader extends StatelessWidget {
                 if (subtitle != null)
                   Text(
                     subtitle!,
-                    style: const TextStyle(
-                      color: kMuted,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: kMuted, fontSize: 12),
                   ),
               ],
             ),
@@ -1190,7 +1190,9 @@ class _CollapsibleSection extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 borderRadius: BorderRadius.circular(12),
-                color: isExpanded ? kPrimary.withValues(alpha: 0.05) : Colors.transparent,
+                color: isExpanded
+                    ? kPrimary.withValues(alpha: 0.05)
+                    : Colors.transparent,
               ),
               child: Row(
                 children: [
@@ -1215,10 +1217,7 @@ class _CollapsibleSection extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           subtitle,
-                          style: const TextStyle(
-                            color: kMuted,
-                            fontSize: 12,
-                          ),
+                          style: const TextStyle(color: kMuted, fontSize: 12),
                         ),
                       ],
                     ),
@@ -1276,10 +1275,7 @@ class _ProductPhotoSectionState extends State<_ProductPhotoSection> {
     return Container(
       decoration: BoxDecoration(
         color: hasImage ? kSurface : const Color(0xFFFAFAFA),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -1445,11 +1441,7 @@ class _PhotoActionButtonState extends State<_PhotoActionButton> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  HugeIcon(
-                    icon: widget.icon,
-                    color: kPrimary,
-                    size: 18,
-                  ),
+                  HugeIcon(icon: widget.icon, color: kPrimary, size: 18),
                   const SizedBox(width: 6),
                   Text(
                     widget.label,
@@ -1488,20 +1480,20 @@ class _PhotoActionButtonState extends State<_PhotoActionButton> {
               onTap: widget.onPressed,
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
-                  color: _isHovering ? kPrimary.withValues(alpha: 0.9) : kPrimary,
+                  color: _isHovering
+                      ? kPrimary.withValues(alpha: 0.9)
+                      : kPrimary,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    HugeIcon(
-                      icon: widget.icon,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    HugeIcon(icon: widget.icon, color: Colors.white, size: 18),
                     const SizedBox(width: 6),
                     Text(
                       widget.label,
