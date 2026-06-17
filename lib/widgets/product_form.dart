@@ -1432,7 +1432,7 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
       onExit: (_) => setState(() => _isHovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(
@@ -1445,9 +1445,18 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
           isExpanded: true,
           underline: const SizedBox(),
           value: widget.value,
-          items: widget.items,
+          items: widget.items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item.value,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: item.child,
+              ),
+            );
+          }).toList(),
           onChanged: widget.onChanged,
           dropdownColor: Colors.white,
+          menuMaxHeight: 300,
           style: const TextStyle(
             fontSize: 14,
             color: kInk,
