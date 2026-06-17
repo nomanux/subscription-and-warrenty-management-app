@@ -394,7 +394,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 controller: _brand,
                 hint: 'e.g., Samsung',
               ),
-              // Category with improved design
+              // Category with pill/chip design
               const Text(
                 'Category *',
                 style: TextStyle(
@@ -405,15 +405,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 90,
+                height: 60,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: kCategories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
                     final cat = kCategories[i];
                     final selected = _category == cat;
-                    return _ImprovedCategoryButton(
+                    return _CategoryPill(
                       label: cat,
                       icon: kCategoryIcons[cat]!,
                       selected: selected,
@@ -835,9 +835,9 @@ class _FormField extends StatelessWidget {
 }
 
 /// Category button with icon.
-/// Improved category button with better design and animations.
-class _ImprovedCategoryButton extends StatefulWidget {
-  const _ImprovedCategoryButton({
+/// Category pill/chip with horizontal design - default gray, selected green.
+class _CategoryPill extends StatefulWidget {
+  const _CategoryPill({
     required this.label,
     required this.icon,
     required this.selected,
@@ -850,28 +850,11 @@ class _ImprovedCategoryButton extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_ImprovedCategoryButton> createState() => _ImprovedCategoryButtonState();
+  State<_CategoryPill> createState() => _CategoryPillState();
 }
 
-class _ImprovedCategoryButtonState extends State<_ImprovedCategoryButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _CategoryPillState extends State<_CategoryPill> {
   bool _isHovering = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -884,59 +867,39 @@ class _ImprovedCategoryButtonState extends State<_ImprovedCategoryButton>
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 75,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? kPrimary
+                ? kPrimary.withValues(alpha: 0.12)
                 : (_isHovering
-                    ? const Color(0xFFF0F9F6)
+                    ? const Color(0xFFF0F4F1)
                     : Colors.transparent),
             border: Border.all(
               color: isSelected
                   ? kPrimary
                   : (_isHovering
-                      ? kPrimary.withValues(alpha: 0.3)
+                      ? const Color(0xFFD1D5D0)
                       : const Color(0xFFE2E8F0)),
-              width: 2,
+              width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: kPrimary.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
+            borderRadius: BorderRadius.circular(24),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : kMuted,
-                ),
-                child: HugeIcon(
-                  icon: widget.icon,
-                  size: 28,
-                ),
+              HugeIcon(
+                icon: widget.icon,
+                color: isSelected ? kPrimary : const Color(0xFF94A3B8),
+                size: 18,
               ),
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  widget.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                    color: isSelected ? Colors.white : kInk,
-                    height: 1.2,
-                  ),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? kPrimary : const Color(0xFF64748B),
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
