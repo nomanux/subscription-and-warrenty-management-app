@@ -123,9 +123,22 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         title: const Text('Add New Location'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'e.g., Bedroom, Living Room',
-            border: OutlineInputBorder(),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(
+                color: Color(0xFFCBD5E1),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(
+                color: kPrimary,
+                width: 1.5,
+              ),
+            ),
           ),
         ),
         actions: [
@@ -530,6 +543,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           vertical: 12,
                         ),
                         isDense: true,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFCBD5E1),
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: kPrimary,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -829,6 +856,20 @@ class _FormField extends StatelessWidget {
               vertical: 12,
             ),
             isDense: true,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(
+                color: Color(0xFFCBD5E1),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(
+                color: kPrimary,
+                width: 1.5,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 14),
