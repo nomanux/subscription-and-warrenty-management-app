@@ -109,6 +109,7 @@ class ProductInput {
     this.shopPhoneNumber,
     this.visitingCard,
     this.warrantyCard,
+    this.productImage,
   });
 
   final String productName;
@@ -127,6 +128,7 @@ class ProductInput {
   final String? shopPhoneNumber;
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
+  final ReceiptFile? productImage;
 }
 
 /// A full product record as stored in Firestore.
@@ -152,6 +154,7 @@ class Product {
     this.shopPhoneNumber,
     this.visitingCard,
     this.warrantyCard,
+    this.productImage,
   });
 
   final String id;
@@ -176,6 +179,7 @@ class Product {
   final String? shopPhoneNumber;
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
+  final ReceiptFile? productImage;
 
   /// Build from a Firestore document's data map plus its id.
   factory Product.fromMap(String id, Map<String, dynamic> data) {
@@ -207,6 +211,9 @@ class Product {
       warrantyCard: ReceiptFile.fromMap(
         (data['warrantyCard'] as Map?)?.cast<String, dynamic>(),
       ),
+      productImage: ReceiptFile.fromMap(
+        (data['productImage'] as Map?)?.cast<String, dynamic>(),
+      ),
     );
   }
 
@@ -233,6 +240,7 @@ class Product {
         'shopPhoneNumber': shopPhoneNumber,
         'visitingCard': visitingCard?.toMap(),
         'warrantyCard': warrantyCard?.toMap(),
+        'productImage': productImage?.toMap(),
       };
 
   Product copyWith({WarrantyStatus? status}) {
@@ -257,6 +265,7 @@ class Product {
       shopPhoneNumber: shopPhoneNumber,
       visitingCard: visitingCard,
       warrantyCard: warrantyCard,
+      productImage: productImage,
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../models/product.dart';
 import '../theme.dart';
 import '../utils/warranty.dart';
+import './receipt_image.dart';
 
 String _rgbaClass(String prop, Color color, double opacity) {
   final r = (color.r * 255).round();
@@ -86,7 +87,7 @@ class _ProductCardState extends State<ProductCard> {
     final subtitle = product.brand != null && product.brand!.isNotEmpty
         ? '${product.brand} · ${product.category}'
         : product.category;
-    final thumb = product.receipt?.thumbnailUri ?? product.receipt?.uri;
+    final thumb = product.productImage?.uri ?? product.receipt?.thumbnailUri ?? product.receipt?.uri;
     final hasImage = thumb != null && thumb.isNotEmpty;
 
     return RepaintBoundary(
@@ -244,6 +245,8 @@ class _ExpandedDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasProductImage = product.productImage?.uri != null && product.productImage!.uri.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: WColumn(
@@ -251,6 +254,18 @@ class _ExpandedDetails extends StatelessWidget {
         children: [
           Container(height: 1, color: const Color(0xFFE5E7EB)),
           const SizedBox(height: 16),
+          if (hasProductImage) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: ReceiptImage(
+                uri: product.productImage!.uri,
+                width: double.infinity,
+                height: 150,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           _DetailRow('Purchase Date', _formatDate(product.purchaseDate)),
           const SizedBox(height: 12),
           _DetailRow('Expiry Date', _formatDate(product.expiryDate)),

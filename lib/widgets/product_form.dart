@@ -51,6 +51,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   String? _localImageUri;
   String? _visitingCardUri;
   String? _warrantyCardUri;
+  String? _productImageUri;
   bool _saving = false;
   String? _error;
   List<String> _locations = ['Home', 'Office'];
@@ -78,6 +79,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
     _category = p?.category ?? kCategories.first;
     _receipt = p?.receipt;
+    _productImageUri = p?.productImage?.uri;
     _loadLocations(p?.location);
   }
 
@@ -149,13 +151,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage({required String type}) async {
+  Future<void> _pickImage({required String type, ImageSource source = ImageSource.gallery}) async {
     setState(() => _error = null);
     try {
       final picker = ImagePicker();
       final file = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 70,
+        source: source,
+        imageQuality: type == 'product' ? 80 : 70,
       );
       if (file == null) return;
       final bytes = await file.readAsBytes();
@@ -168,6 +170,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           _visitingCardUri = uri;
         } else if (type == 'warranty') {
           _warrantyCardUri = uri;
+        } else if (type == 'product') {
+          _productImageUri = uri;
         }
       });
     } catch (e) {
@@ -220,6 +224,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         );
       }
 
+      var finalProductImage = widget.initial?.productImage;
+      if (_productImageUri != null) {
+        finalProductImage = ReceiptFile(
+          uri: _productImageUri!,
+          fileType: 'image',
+          thumbnailUri: _productImageUri,
+        );
+      }
+
       final purchaseIso = DateTime.parse(
         _purchaseDate.text.trim(),
       ).toUtc().toIso8601String();
@@ -239,6 +252,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         shopPhoneNumber: _shopPhoneNumber.text.trim().isEmpty ? null : _shopPhoneNumber.text.trim(),
         visitingCard: finalVisitingCard,
         warrantyCard: finalWarrantyCard,
+        productImage: finalProductImage,
       );
 
       if (_isEdit) {
@@ -520,6 +534,22 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 24),
+              // Product Photo Section
+              const Text(
+                'Product Photo',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ProductPhotoSection(
+                imageUri: _productImageUri,
+                onCamera: () => _pickImage(type: 'product', source: ImageSource.camera),
+                onGallery: () => _pickImage(type: 'product', source: ImageSource.gallery),
+              ),
+              const SizedBox(height: 24),
               // Additional Documents
               const Text(
                 'Additional Documents',
@@ -789,6 +819,147 @@ class _ExpandableDocumentItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Product photo section with camera and gallery options.
+class _ProductPhotoSection extends StatelessWidget {
+  const _ProductPhotoSection({
+    required this.imageUri,
+    required this.onCamera,
+    required this.onGallery,
+  });
+
+  final String? imageUri;
+  final VoidCallback onCamera;
+  final VoidCallback onGallery;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUri != null && imageUri!.isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: const Color(0xFFCBD5E1),
+          width: 1.5,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          if (hasImage) ...[
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: ReceiptImage(
+                uri: imageUri!,
+                width: double.infinity,
+                height: 200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onCamera,
+                      icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedCamera01,
+                        color: kPrimary,
+                        size: 18,
+                      ),
+                      label: const Text('Retake'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kPrimary,
+                        side: const BorderSide(color: kPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onGallery,
+                      icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedImage02,
+                        color: kPrimary,
+                        size: 18,
+                      ),
+                      label: const Text('Change'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kPrimary,
+                        side: const BorderSide(color: kPrimary),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedImage01,
+                    color: const Color(0xFFB0B9C8),
+                    size: 40,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Add Product Photo',
+                    style: TextStyle(
+                      color: kInk,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Take a photo or select from gallery',
+                    style: TextStyle(color: kMuted, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: onCamera,
+                          icon: HugeIcon(
+                            icon: HugeIcons.strokeRoundedCamera01,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text('Camera'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onGallery,
+                          icon: HugeIcon(
+                            icon: HugeIcons.strokeRoundedImage02,
+                            color: kPrimary,
+                            size: 18,
+                          ),
+                          label: const Text('Gallery'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: kPrimary,
+                            side: const BorderSide(color: kPrimary),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

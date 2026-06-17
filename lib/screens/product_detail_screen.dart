@@ -113,6 +113,25 @@ class ProductDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              // Product Photo section
+              if (product.productImage?.uri != null && product.productImage!.uri.isNotEmpty) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: kCardShadow,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: ReceiptImage(
+                      uri: product.productImage!.uri,
+                      width: double.infinity,
+                      height: 240,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               // Info card.
               Container(
                 decoration: BoxDecoration(
@@ -255,6 +274,22 @@ class ProductDetailScreen extends StatelessWidget {
                       ],
                     ],
                   ),
+                ),
+              ],
+              // Product Photo section
+              if (product.productImage?.uri != null && product.productImage!.uri.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text('Product Photo',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: kInk)),
+                const SizedBox(height: 10),
+                ReceiptImage(
+                  uri: product.productImage!.uri,
+                  width: double.infinity,
+                  height: 220,
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ],
               // Receipt section - always show
