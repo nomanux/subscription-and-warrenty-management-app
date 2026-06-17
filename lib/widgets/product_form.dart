@@ -1492,8 +1492,8 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              color: _isHovering ? kPrimary : kPrimary.withValues(alpha: 0.5),
-              width: 1.5,
+              color: _isHovering ? kPrimary : const Color(0xFFCBD5E1),
+              width: _isHovering ? 1.5 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
