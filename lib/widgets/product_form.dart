@@ -871,23 +871,34 @@ class _CategoryPillState extends State<_CategoryPill> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color.fromARGB(23, 64, 255, 200) // rgba(64, 255, 200, 0.09)
+                ? const Color.fromARGB(
+                    23,
+                    64,
+                    255,
+                    200,
+                  ) // rgba(64, 255, 200, 0.09)
                 : (_isHovering ? const Color(0xFFF5F5F5) : Colors.transparent),
             border: Border.all(
               color: isSelected
-                  ? const Color.fromARGB(112, 17, 176, 130) // rgba(17, 176, 130, 0.44)
+                  ? const Color.fromARGB(
+                      112,
+                      17,
+                      176,
+                      130,
+                    ) // rgba(17, 176, 130, 0.44)
                   : (_isHovering
                         ? const Color(0xFFD0D0D0)
                         : const Color(0xFFE8E8E8)), // light gray
               width: 1,
             ),
-            borderRadius: BorderRadius.circular(127),
+            borderRadius: BorderRadius.circular(50),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               HugeIcon(
                 icon: widget.icon,
@@ -896,11 +907,11 @@ class _CategoryPillState extends State<_CategoryPill> {
                     : const Color(0xFF5E5E5E), // hsla(0, 0%, 37%, 1)
                 size: 18,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 13),
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected
                       ? const Color(0xFF11B082) // kPrimary green
