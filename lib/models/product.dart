@@ -76,7 +76,7 @@ class ReceiptFile {
   Map<String, dynamic> toMap() => {
         'uri': uri,
         'fileType': fileType,
-        'thumbnailUri': thumbnailUri,
+        if (thumbnailUri != null) 'thumbnailUri': thumbnailUri,
       };
 
   static ReceiptFile? fromMap(Map<String, dynamic>? map) {

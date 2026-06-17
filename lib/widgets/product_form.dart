@@ -183,23 +183,30 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       final picker = ImagePicker();
       final file = await picker.pickImage(
         source: source,
-        imageQuality: 100,
+        imageQuality: 70,
       );
       if (file == null) return;
 
-      // Compress image to standard size
       var bytes = await file.readAsBytes();
-      final compressedFile = await FlutterImageCompress.compressAndGetFile(
-        file.path,
-        '${file.path}_compressed.jpg',
-        quality: 80,
-        minWidth: 1024,
-        minHeight: 1024,
-      );
 
-      if (compressedFile != null) {
-        bytes = await compressedFile.readAsBytes();
+      // Attempt to compress on mobile platforms
+      try {
+        final compressedFile = await FlutterImageCompress.compressAndGetFile(
+          file.path,
+          '${file.path}_compressed.jpg',
+          quality: 60,
+          minWidth: 800,
+          minHeight: 800,
+        );
+        if (compressedFile != null) {
+          bytes = await compressedFile.readAsBytes();
+        }
+      } catch (e) {
+        // Compression failed or on web - use original with lower quality
+        // ImagePicker already applied 70% quality
       }
+
+      // Image compressed and ready for upload
 
       final mime = _guessMime(file.name);
       final uri = 'data:$mime;base64,${base64Encode(bytes)}';
