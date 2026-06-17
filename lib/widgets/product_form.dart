@@ -949,7 +949,7 @@ class _CategoryPillState extends State<_CategoryPill> {
                     : const Color(0xFF5E5E5E), // hsla(0, 0%, 37%, 1)
                 size: 18,
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: 6),
               Text(
                 widget.label,
                 style: TextStyle(
@@ -1447,6 +1447,61 @@ class _ProductPhotoSectionState extends State<_ProductPhotoSection> {
 }
 
 /// Reusable photo action button.
+/// Standard dropdown field with Material Design 3 styling.
+class _StandardDropdown<T> extends StatefulWidget {
+  const _StandardDropdown({
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.icon,
+  });
+
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+  final IconData? icon;
+
+  @override
+  State<_StandardDropdown<T>> createState() => _StandardDropdownState<T>();
+}
+
+class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          border: Border.all(
+            color: _isHovering ? kPrimary.withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: DropdownButton<T>(
+          isExpanded: true,
+          underline: const SizedBox(),
+          value: widget.value,
+          items: widget.items,
+          onChanged: widget.onChanged,
+          dropdownColor: Colors.white,
+          style: const TextStyle(
+            fontSize: 14,
+            color: kInk,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PhotoActionButton extends StatefulWidget {
   const _PhotoActionButton({
     required this.icon,
