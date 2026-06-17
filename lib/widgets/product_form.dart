@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product.dart';
@@ -43,9 +44,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late final TextEditingController _shopName;
   late final TextEditingController _shopPhoneNumber;
   late final TextEditingController _purchaseDate;
-  late final TextEditingController _months;
+  late final TextEditingController _duration;
   late final TextEditingController _notes;
   late String _category;
+  late String _durationUnit;
 
   ReceiptFile? _receipt;
   String? _localImageUri;
@@ -55,6 +57,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _saving = false;
   String? _error;
   List<String> _locations = ['Home', 'Office'];
+  bool _showOptionalDetails = false;
+  bool _showPhotosSection = false;
 
   bool get _isEdit => widget.initial != null;
 
@@ -74,9 +78,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _purchaseDate = TextEditingController(
       text: purchase.isNotEmpty ? purchase.substring(0, 10) : _todayIso(),
     );
-    _months = TextEditingController(
+    _duration = TextEditingController(
       text: (p?.warrantyDurationMonths ?? 12).toString(),
     );
+    _durationUnit = 'months';
     _category = p?.category ?? kCategories.first;
     _receipt = p?.receipt;
     _productImageUri = p?.productImage?.uri;
@@ -146,7 +151,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _shopName.dispose();
     _shopPhoneNumber.dispose();
     _purchaseDate.dispose();
-    _months.dispose();
+    _duration.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -184,6 +189,35 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (lower.endsWith('.png')) return 'image/png';
     if (lower.endsWith('.webp')) return 'image/webp';
     return 'image/jpeg';
+  }
+
+  String _calculateExpiryDate() {
+    try {
+      final purchase = DateTime.parse(_purchaseDate.text.trim());
+      final duration = int.tryParse(_duration.text.trim()) ?? 12;
+      final months = _durationUnit == 'years' ? duration * 12 : duration;
+      final expiry = purchase.add(Duration(days: months * 30));
+      return DateFormat('d MMM, yyyy').format(expiry);
+    } catch (_) {
+      return 'Invalid date';
+    }
+  }
+
+  int _getFilledOptionalCount() {
+    int count = 0;
+    if (_shopName.text.trim().isNotEmpty) count++;
+    if (_shopPhoneNumber.text.trim().isNotEmpty) count++;
+    if (_notes.text.trim().isNotEmpty) count++;
+    return count;
+  }
+
+  int _getFilledMediaCount() {
+    int count = 0;
+    if (_productImageUri != null) count++;
+    if (_warrantyCardUri != null) count++;
+    if (_localImageUri != null) count++;
+    if (_visitingCardUri != null) count++;
+    return count;
   }
 
   Future<void> _save() async {
@@ -237,12 +271,17 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _purchaseDate.text.trim(),
       ).toUtc().toIso8601String();
 
+      final durationValue = int.tryParse(_duration.text.trim()) ?? 12;
+      final durationInMonths = _durationUnit == 'years'
+          ? durationValue * 12
+          : durationValue;
+
       final input = ProductInput(
         productName: name,
         brand: _brand.text.trim().isEmpty ? null : _brand.text.trim(),
         category: _category,
         purchaseDate: purchaseIso,
-        warrantyDurationMonths: int.tryParse(_months.text.trim()) ?? 12,
+        warrantyDurationMonths: durationInMonths,
         serialNumber: widget.initial?.serialNumber,
         modelNumber: widget.initial?.modelNumber,
         notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
@@ -307,8 +346,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final previewUri = _localImageUri ?? _receipt?.uri;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -340,105 +377,33 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Upload Receipt Section at the top
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: const Color(0xFFCBD5E1),
-                    width: 1.5,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedFile01,
-                      color: const Color(0xFFB0B9C8),
-                      size: 40,
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Upload Receipt',
-                      style: TextStyle(
-                        color: kInk,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Scan or upload receipt for automatic extraction',
-                      style: TextStyle(color: kMuted, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 14),
-                    if (previewUri != null && previewUri.isNotEmpty) ...[
-                      ReceiptImage(
-                        uri: previewUri,
-                        width: 120,
-                        height: 120,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    FilledButton(
-                      onPressed: () => _pickImage(type: 'receipt'),
-                      child: const Text('Upload Receipt'),
-                    ),
-                  ],
-                ),
+              // SECTION 1: Essential Details (Always Open)
+              _SectionHeader(
+                icon: HugeIcons.strokeRoundedCheckmarkBadge01,
+                title: 'Essential Details',
+                subtitle: 'Basic warranty information',
               ),
-              const SizedBox(height: 24),
-              // Extracted Information
-              const Text(
-                'Extracted Information',
-                style: TextStyle(
-                  color: kInk,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               _FormField(
-                label: 'Product Name',
+                label: 'What are you insuring? *',
                 controller: _name,
-                hint: 'Samsung Smart TV',
+                hint: 'e.g., Samsung Smart TV',
               ),
-              _FormField(label: 'Brand', controller: _brand, hint: 'Samsung'),
-              // Purchase Date and Warranty in a row
-              Row(
-                children: [
-                  Expanded(
-                    child: _FormField(
-                      label: 'Purchase Date',
-                      controller: _purchaseDate,
-                      hint: '2025-06-10',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FormField(
-                      label: 'Warranty',
-                      controller: _months,
-                      hint: '12 Months',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
+              _FormField(
+                label: 'Brand (optional)',
+                controller: _brand,
+                hint: 'e.g., Samsung',
               ),
               // Category with icon buttons
-              const SizedBox(height: 12),
               const Text(
-                'Category',
+                'Category *',
                 style: TextStyle(
                   color: kInk,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               SizedBox(
                 height: 70,
                 child: ListView.separated(
@@ -457,10 +422,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 24),
-              // Location Dropdown
+              const SizedBox(height: 16),
+              // Location in main section
               const Text(
-                'Location',
+                'Where is it stored?',
                 style: TextStyle(
                   color: kInk,
                   fontSize: 14,
@@ -511,69 +476,250 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 24),
-              // Shop Information
+              const SizedBox(height: 16),
+              // Purchase Date
               const Text(
-                'Shop Information',
+                'When did you buy it? *',
                 style: TextStyle(
                   color: kInk,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(height: 12),
-              _FormField(
-                label: 'Shop Name',
-                controller: _shopName,
-                hint: 'Electronics Store',
-              ),
-              _FormField(
-                label: 'Shop Phone',
-                controller: _shopPhoneNumber,
-                hint: '+1 234 567 8900',
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 24),
-              // Product Photo Section
-              const Text(
-                'Product Photo',
-                style: TextStyle(
-                  color: kInk,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _ProductPhotoSection(
-                imageUri: _productImageUri,
-                onCamera: () => _pickImage(type: 'product', source: ImageSource.camera),
-                onGallery: () => _pickImage(type: 'product', source: ImageSource.gallery),
-              ),
-              const SizedBox(height: 24),
-              // Additional Documents
-              const Text(
-                'Additional Documents',
-                style: TextStyle(
-                  color: kInk,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _ExpandableDocumentItem(
-                title: 'Warranty Card',
-                onAdd: () => _pickImage(type: 'warranty'),
-                hasImage: _warrantyCardUri != null,
-                imageUri: _warrantyCardUri,
               ),
               const SizedBox(height: 8),
-              _ExpandableDocumentItem(
-                title: 'Visiting Card',
-                onAdd: () => _pickImage(type: 'visiting'),
-                hasImage: _visitingCardUri != null,
-                imageUri: _visitingCardUri,
+              _FormField(
+                label: '',
+                controller: _purchaseDate,
+                hint: 'Tap to select date',
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              // Warranty Duration with Unit
+              const Text(
+                'How long is the warranty? *',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextField(
+                      controller: _duration,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(fontSize: 14, color: kInk),
+                      decoration: InputDecoration(
+                        hintText: '12',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        value: _durationUnit,
+                        items: [
+                          DropdownMenuItem(
+                            value: 'months',
+                            child: Text('Months'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'years',
+                            child: Text('Years'),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => _durationUnit = v);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Expiry Date Display (Auto-calculated)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: kPrimary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: kPrimary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedShield01,
+                      color: kPrimary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Warranty expires on',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: kMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _calculateExpiryDate(),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: kInk,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+              // SECTION 2: Optional Details (Collapsible)
+              _CollapsibleSection(
+                icon: HugeIcons.strokeRoundedBuilding03,
+                title: 'Shop & Location Info',
+                subtitle: '${_getFilledOptionalCount()}/3 details added',
+                isExpanded: _showOptionalDetails,
+                onToggle: () => setState(
+                  () => _showOptionalDetails = !_showOptionalDetails,
+                ),
+                child: _showOptionalDetails
+                    ? Column(
+                        children: [
+                          _FormField(
+                            label: 'Shop name (optional)',
+                            controller: _shopName,
+                            hint: 'e.g., Electronics World',
+                          ),
+                          _FormField(
+                            label: 'Shop phone (optional)',
+                            controller: _shopPhoneNumber,
+                            hint: '+1 234 567 8900',
+                            keyboardType: TextInputType.phone,
+                          ),
+                          _FormField(
+                            label: 'Notes (optional)',
+                            controller: _notes,
+                            hint: 'Serial #, model, or other details...',
+                          ),
+                        ],
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              // SECTION 3: Photos & Documents (Collapsible)
+              _CollapsibleSection(
+                icon: HugeIcons.strokeRoundedImage01,
+                title: 'Photos & Documents',
+                subtitle: '${_getFilledMediaCount()}/4 items added',
+                isExpanded: _showPhotosSection,
+                onToggle: () => setState(
+                  () => _showPhotosSection = !_showPhotosSection,
+                ),
+                child: _showPhotosSection
+                    ? Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Product Photo',
+                            style: TextStyle(
+                              color: kInk,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _ProductPhotoSection(
+                            imageUri: _productImageUri,
+                            onCamera: () => _pickImage(
+                              type: 'product',
+                              source: ImageSource.camera,
+                            ),
+                            onGallery: () => _pickImage(
+                              type: 'product',
+                              source: ImageSource.gallery,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Warranty Card',
+                            style: TextStyle(
+                              color: kInk,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _ExpandableDocumentItem(
+                            title: 'Warranty Card',
+                            onAdd: () => _pickImage(type: 'warranty'),
+                            hasImage: _warrantyCardUri != null,
+                            imageUri: _warrantyCardUri,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Receipt',
+                            style: TextStyle(
+                              color: kInk,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _ExpandableDocumentItem(
+                            title: 'Receipt',
+                            onAdd: () => _pickImage(type: 'receipt'),
+                            hasImage: _localImageUri != null,
+                            imageUri: _localImageUri,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Other Documents',
+                            style: TextStyle(
+                              color: kInk,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _ExpandableDocumentItem(
+                            title: 'Visiting Card / User Manual',
+                            onAdd: () => _pickImage(type: 'visiting'),
+                            hasImage: _visitingCardUri != null,
+                            imageUri: _visitingCardUri,
+                          ),
+                        ],
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 28),
               if (_error != null) ...[
                 Row(
                   children: [
@@ -593,7 +739,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-              // Save Button
+              // Save Button (Sticky at bottom)
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -820,6 +966,153 @@ class _ExpandableDocumentItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Section header with icon and title.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+  });
+
+  final List<List<dynamic>> icon;
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            HugeIcon(
+              icon: icon,
+              color: kPrimary,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: kInk,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: const TextStyle(
+                      color: kMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Collapsible section for optional fields.
+class _CollapsibleSection extends StatelessWidget {
+  const _CollapsibleSection({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.child,
+  });
+
+  final List<List<dynamic>> icon;
+  final String title;
+  final String subtitle;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(12),
+                color: isExpanded ? kPrimary.withValues(alpha: 0.05) : Colors.transparent,
+              ),
+              child: Row(
+                children: [
+                  HugeIcon(
+                    icon: icon,
+                    color: isExpanded ? kPrimary : kMuted,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: kInk,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            color: kMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  HugeIcon(
+                    icon: isExpanded
+                        ? HugeIcons.strokeRoundedArrowUp01
+                        : HugeIcons.strokeRoundedArrowDown01,
+                    color: kPrimary,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (isExpanded && child != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFFAFAFA),
+            ),
+            child: child,
+          ),
+        ],
+      ],
     );
   }
 }
