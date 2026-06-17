@@ -1434,12 +1434,12 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: Colors.white,
           border: Border.all(
-            color: _isHovering ? kPrimary.withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
+            color: _isHovering ? kPrimary : kPrimary.withValues(alpha: 0.5),
             width: 1.5,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: DropdownButton<T>(
           isExpanded: true,
