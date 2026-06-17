@@ -1427,44 +1427,86 @@ class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final displayText = widget.items
+        .firstWhere((item) => item.value == widget.value,
+            orElse: () => DropdownMenuItem(
+                value: widget.value,
+                child: Text(widget.value.toString())))
+        .child;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(
-            color: _isHovering ? kPrimary : kPrimary.withValues(alpha: 0.5),
-            width: 1.5,
+      child: GestureDetector(
+        onTap: () => _showCustomMenu(context, displayText),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: _isHovering ? kPrimary : kPrimary.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(8),
           ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: DropdownButton<T>(
-          isExpanded: true,
-          underline: const SizedBox(),
-          value: widget.value,
-          items: widget.items.map((item) {
-            return DropdownMenuItem<T>(
-              value: item.value,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: item.child,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: DefaultTextStyle(
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: kInk,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  child: displayText,
+                ),
               ),
-            );
-          }).toList(),
-          onChanged: widget.onChanged,
-          dropdownColor: Colors.white,
-          menuMaxHeight: 300,
-          style: const TextStyle(
-            fontSize: 14,
-            color: kInk,
-            fontWeight: FontWeight.w500,
+              const Icon(Icons.expand_more, color: kPrimary, size: 20),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  void _showCustomMenu(BuildContext context, Widget displayText) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+
+    final pos = box.localToGlobal(Offset.zero);
+    final menuItems = widget.items
+        .map((item) => PopupMenuItem<T>(
+              value: item.value,
+              height: 40,
+              child: Container(
+                width: box.size.width - 28,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: item.child,
+              ),
+            ))
+        .toList();
+
+    showMenu<T>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        pos.dx,
+        pos.dy + box.size.height + 4,
+        pos.dx + box.size.width,
+        0,
+      ),
+      items: menuItems,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: kPrimary, width: 1.5),
+      ),
+    ).then((value) {
+      if (value != null) {
+        widget.onChanged(value);
+      }
+    });
   }
 }
 
