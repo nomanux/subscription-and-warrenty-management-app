@@ -1366,7 +1366,7 @@ class _ProductPhotoSectionState extends State<_ProductPhotoSection> {
                     'Take a photo or select from gallery',
                     style: TextStyle(
                       color: kMuted,
-                      fontSize: 13,
+                      fontSize: 14,
                       letterSpacing: -0.2,
                     ),
                     textAlign: TextAlign.center,
