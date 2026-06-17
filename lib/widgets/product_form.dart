@@ -487,10 +487,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _FormField(
-                label: '',
+              _DatePickerField(
                 controller: _purchaseDate,
-                hint: 'Tap to select date',
+                onDateSelected: (date) {
+                  setState(() {
+                    _purchaseDate.text = date;
+                  });
+                },
               ),
               const SizedBox(height: 16),
               // Warranty Duration with Unit
@@ -1019,6 +1022,119 @@ class _SectionHeader extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Date picker field with calendar UI.
+class _DatePickerField extends StatefulWidget {
+  const _DatePickerField({
+    required this.controller,
+    required this.onDateSelected,
+  });
+
+  final TextEditingController controller;
+  final Function(String) onDateSelected;
+
+  @override
+  State<_DatePickerField> createState() => _DatePickerFieldState();
+}
+
+class _DatePickerFieldState extends State<_DatePickerField> {
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _parseDate();
+  }
+
+  void _parseDate() {
+    try {
+      _selectedDate = DateTime.parse(widget.controller.text.trim());
+    } catch (_) {
+      _selectedDate = DateTime.now();
+    }
+  }
+
+  Future<void> _showDatePicker() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: kPrimary,
+              onPrimary: Colors.white,
+              surface: kSurface,
+              onSurface: kInk,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+      final iso = picked.toIso8601String().substring(0, 10);
+      widget.controller.text = iso;
+      widget.onDateSelected(iso);
+    }
+  }
+
+  String _formatDate(String iso) {
+    try {
+      final date = DateTime.parse(iso);
+      return DateFormat('d MMM, yyyy').format(date);
+    } catch (_) {
+      return 'Select date';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _showDatePicker,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedCalendar03,
+                color: kPrimary,
+                size: 18,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _formatDate(widget.controller.text.trim()),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: widget.controller.text.isEmpty ? kMuted : kInk,
+                  ),
+                ),
+              ),
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                color: kPrimary,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
