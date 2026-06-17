@@ -411,22 +411,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 30,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: kCategories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final cat = kCategories[i];
-                    final selected = _category == cat;
-                    return _CategoryPill(
-                      label: cat,
-                      icon: kCategoryIcons[cat]!,
-                      selected: selected,
-                      onTap: () => setState(() => _category = cat),
-                    );
-                  },
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ...List.generate(
+                      kCategories.length,
+                      (i) {
+                        final cat = kCategories[i];
+                        final selected = _category == cat;
+                        return Padding(
+                          padding: EdgeInsets.only(right: i == kCategories.length - 1 ? 0 : 8),
+                          child: _CategoryPill(
+                            label: cat,
+                            icon: kCategoryIcons[cat]!,
+                            selected: selected,
+                            onTap: () => setState(() => _category = cat),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
