@@ -444,64 +444,46 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  value: _location.text.isEmpty
-                      ? _locations.first
-                      : _location.text,
-                  items: [
-                    ..._locations.map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            e,
-                            style: const TextStyle(fontSize: 14, color: kInk),
-                          ),
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: '__add__',
+              _StandardDropdown<String>(
+                value: _location.text.isEmpty ? _locations.first : _location.text,
+                items: [
+                  ..._locations.map(
+                    (e) => DropdownMenuItem(
+                      value: e,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedAdd01,
-                              color: kPrimary,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Add new location',
-                              style: TextStyle(color: kPrimary, fontSize: 14),
-                            ),
-                          ],
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(e),
                       ),
                     ),
-                  ],
-                  onChanged: (v) {
-                    if (v == '__add__') {
-                      _showAddLocationDialog();
-                    } else if (v != null) {
-                      setState(() => _location.text = v);
-                    }
-                  },
-                ),
+                  ),
+                  DropdownMenuItem(
+                    value: '__add__',
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedAdd01,
+                            color: kPrimary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Add new location',
+                            style: TextStyle(color: kPrimary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (v) {
+                  if (v == '__add__') {
+                    _showAddLocationDialog();
+                  } else if (v != null) {
+                    setState(() => _location.text = v);
+                  }
+                },
               ),
               const SizedBox(height: 16),
               // Purchase Date
