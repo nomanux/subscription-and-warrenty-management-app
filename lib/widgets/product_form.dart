@@ -1289,8 +1289,8 @@ class _CollapsibleSection extends StatelessWidget {
   }
 }
 
-/// Product photo section with camera and gallery options.
-class _ProductPhotoSection extends StatelessWidget {
+/// Product photo section with camera and gallery options - Material Design 3.
+class _ProductPhotoSection extends StatefulWidget {
   const _ProductPhotoSection({
     required this.imageUri,
     required this.onCamera,
@@ -1302,120 +1302,124 @@ class _ProductPhotoSection extends StatelessWidget {
   final VoidCallback onGallery;
 
   @override
+  State<_ProductPhotoSection> createState() => _ProductPhotoSectionState();
+}
+
+class _ProductPhotoSectionState extends State<_ProductPhotoSection> {
+  @override
   Widget build(BuildContext context) {
-    final hasImage = imageUri != null && imageUri!.isNotEmpty;
+    final hasImage = widget.imageUri != null && widget.imageUri!.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
+        color: hasImage ? kSurface : const Color(0xFFFAFAFA),
         border: Border.all(
-          color: const Color(0xFFCBD5E1),
-          width: 1.5,
+          color: const Color(0xFFE2E8F0),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         children: [
           if (hasImage) ...[
+            // Image preview with buttons below
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: ReceiptImage(
-                uri: imageUri!,
+                uri: widget.imageUri!,
                 width: double.infinity,
-                height: 200,
-                borderRadius: BorderRadius.circular(8),
+                height: 180,
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onCamera,
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedCamera01,
-                        color: kPrimary,
-                        size: 18,
-                      ),
-                      label: const Text('Retake'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimary,
-                        side: const BorderSide(color: kPrimary),
-                      ),
+                    child: _PhotoActionButton(
+                      icon: HugeIcons.strokeRoundedCamera01,
+                      label: 'Retake',
+                      isOutlined: false,
+                      onPressed: widget.onCamera,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onGallery,
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedImage02,
-                        color: kPrimary,
-                        size: 18,
-                      ),
-                      label: const Text('Change'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimary,
-                        side: const BorderSide(color: kPrimary),
-                      ),
+                    child: _PhotoActionButton(
+                      icon: HugeIcons.strokeRoundedImage02,
+                      label: 'Change',
+                      isOutlined: true,
+                      onPressed: widget.onGallery,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
           ] else ...[
+            // Empty state with call-to-action
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
               child: Column(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedImage01,
-                    color: const Color(0xFFB0B9C8),
-                    size: 40,
+                  // Icon with background
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: kPrimary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Center(
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedImage01,
+                        color: kPrimary,
+                        size: 28,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  // Title
                   const Text(
                     'Add Product Photo',
                     style: TextStyle(
                       color: kInk,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
+                  // Subtitle
                   const Text(
                     'Take a photo or select from gallery',
-                    style: TextStyle(color: kMuted, fontSize: 12),
+                    style: TextStyle(
+                      color: kMuted,
+                      fontSize: 13,
+                      letterSpacing: -0.2,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 20),
+                  // Action buttons
                   Row(
                     children: [
                       Expanded(
-                        child: FilledButton.icon(
-                          onPressed: onCamera,
-                          icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedCamera01,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          label: const Text('Camera'),
+                        child: _PhotoActionButton(
+                          icon: HugeIcons.strokeRoundedCamera01,
+                          label: 'Camera',
+                          isOutlined: false,
+                          onPressed: widget.onCamera,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onGallery,
-                          icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedImage02,
-                            color: kPrimary,
-                            size: 18,
-                          ),
-                          label: const Text('Gallery'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: kPrimary,
-                            side: const BorderSide(color: kPrimary),
-                          ),
+                        child: _PhotoActionButton(
+                          icon: HugeIcons.strokeRoundedImage02,
+                          label: 'Gallery',
+                          isOutlined: true,
+                          onPressed: widget.onGallery,
                         ),
                       ),
                     ],
@@ -1427,5 +1431,130 @@ class _ProductPhotoSection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Reusable photo action button.
+class _PhotoActionButton extends StatefulWidget {
+  const _PhotoActionButton({
+    required this.icon,
+    required this.label,
+    required this.isOutlined,
+    required this.onPressed,
+  });
+
+  final List<List<dynamic>> icon;
+  final String label;
+  final bool isOutlined;
+  final VoidCallback onPressed;
+
+  @override
+  State<_PhotoActionButton> createState() => _PhotoActionButtonState();
+}
+
+class _PhotoActionButtonState extends State<_PhotoActionButton> {
+  bool _isHovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isOutlined) {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _isHovering = true),
+        onExit: (_) => setState(() => _isHovering = false),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: _isHovering
+                    ? kPrimary.withValues(alpha: 0.05)
+                    : Colors.transparent,
+                border: Border.all(
+                  color: _isHovering ? kPrimary : const Color(0xFFE2E8F0),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  HugeIcon(
+                    icon: widget.icon,
+                    color: kPrimary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    widget.label,
+                    style: const TextStyle(
+                      color: kPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _isHovering = true),
+        onExit: (_) => setState(() => _isHovering = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            boxShadow: _isHovering
+                ? [
+                    BoxShadow(
+                      color: kPrimary.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onPressed,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: _isHovering ? kPrimary.withValues(alpha: 0.9) : kPrimary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    HugeIcon(
+                      icon: widget.icon,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
