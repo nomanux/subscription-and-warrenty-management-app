@@ -125,6 +125,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           controller: controller,
           decoration: InputDecoration(
             hintText: 'e.g., Bedroom, Living Room',
+            filled: true,
+            fillColor: Colors.white,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(
@@ -543,6 +545,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           vertical: 12,
                         ),
                         isDense: true,
+                        filled: true,
+                        fillColor: Colors.white,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
@@ -856,6 +860,8 @@ class _FormField extends StatelessWidget {
               vertical: 12,
             ),
             isDense: true,
+            filled: true,
+            fillColor: Colors.white,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(
