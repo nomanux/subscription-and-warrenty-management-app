@@ -415,22 +415,21 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    ...List.generate(
-                      kCategories.length,
-                      (i) {
-                        final cat = kCategories[i];
-                        final selected = _category == cat;
-                        return Padding(
-                          padding: EdgeInsets.only(right: i == kCategories.length - 1 ? 0 : 8),
-                          child: _CategoryPill(
-                            label: cat,
-                            icon: kCategoryIcons[cat]!,
-                            selected: selected,
-                            onTap: () => setState(() => _category = cat),
-                          ),
-                        );
-                      },
-                    ),
+                    ...List.generate(kCategories.length, (i) {
+                      final cat = kCategories[i];
+                      final selected = _category == cat;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          right: i == kCategories.length - 1 ? 0 : 8,
+                        ),
+                        child: _CategoryPill(
+                          label: cat,
+                          icon: kCategoryIcons[cat]!,
+                          selected: selected,
+                          onTap: () => setState(() => _category = cat),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -446,7 +445,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
@@ -553,7 +555,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   Expanded(
                     flex: 1,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
@@ -570,7 +575,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
                                 'Months',
-                                style: const TextStyle(fontSize: 14, color: kInk),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: kInk,
+                                ),
                               ),
                             ),
                           ),
@@ -580,7 +588,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
                                 'Years',
-                                style: const TextStyle(fontSize: 14, color: kInk),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: kInk,
+                                ),
                               ),
                             ),
                           ),
@@ -942,7 +953,7 @@ class _CategoryPillState extends State<_CategoryPill> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   color: isSelected
                       ? const Color(0xFF11B082) // kPrimary green
