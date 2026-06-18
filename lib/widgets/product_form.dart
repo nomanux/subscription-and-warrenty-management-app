@@ -72,7 +72,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _brand = TextEditingController(text: p?.brand ?? '');
     _location = TextEditingController(text: p?.location ?? '');
     _shopName = TextEditingController(text: p?.shopName ?? '');
-    _shopPhoneNumber = TextEditingController(text: p?.shopPhoneNumber ?? '');
+    _shopPhoneNumber = TextEditingController(
+      text: p?.shopPhoneNumber ?? '+88',
+    );
     _notes = TextEditingController(text: p?.notes ?? '');
     final purchase = (p?.purchaseDate ?? '');
     _purchaseDate = TextEditingController(
@@ -659,7 +661,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               FormField(
                 label: 'Shop phone (optional)',
                 controller: _shopPhoneNumber,
-                hint: '+1 234 567 8900',
+                hint: '+88 1XXXXXXXXXX',
                 keyboardType: TextInputType.phone,
               ),
               FormField(
