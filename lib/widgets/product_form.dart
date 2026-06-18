@@ -980,6 +980,7 @@ class _ExpandableDocumentItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: const Color(0xFFE2E8F0)),
         borderRadius: BorderRadius.circular(12),
       ),
