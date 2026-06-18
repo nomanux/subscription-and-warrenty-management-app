@@ -82,15 +82,14 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             ),
           ),
         ),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        Container(
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
               color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
-              width: _isFocused ? 2 : 1,
+              width: 1,
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
