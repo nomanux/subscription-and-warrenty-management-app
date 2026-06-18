@@ -21,10 +21,15 @@ class PhoneInputField extends StatefulWidget {
 
 class _PhoneInputFieldState extends State<PhoneInputField> {
   late TextEditingController _phoneController;
+  late FocusNode _focusNode;
+  bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+
     // Extract phone number without +88 prefix
     String initialValue = widget.controller.text;
     if (initialValue.startsWith('+88')) {
@@ -39,6 +44,10 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     _phoneController.addListener(_updateMainController);
   }
 
+  void _handleFocusChange() {
+    setState(() => _isFocused = _focusNode.hasFocus);
+  }
+
   void _updateMainController() {
     final phoneNumber = _phoneController.text;
     if (phoneNumber.isEmpty) {
@@ -50,6 +59,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
     _phoneController.removeListener(_updateMainController);
     _phoneController.dispose();
     super.dispose();
@@ -71,12 +82,13 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             ),
           ),
         ),
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              color: kPrimary,
-              width: 2,
+              color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+              width: _isFocused ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -104,6 +116,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
               // Phone input
               Expanded(
                 child: TextField(
+                  focusNode: _focusNode,
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
