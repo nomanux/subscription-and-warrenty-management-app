@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Phone input field with fixed +88 country code prefix.
+/// Phone input field with fixed +88 country code prefix - Material Design 3.
 class PhoneInputField extends StatefulWidget {
   const PhoneInputField({
     super.key,
@@ -21,6 +21,7 @@ class PhoneInputField extends StatefulWidget {
 
 class _PhoneInputFieldState extends State<PhoneInputField> {
   late TextEditingController _phoneController;
+  bool _isFocused = false;
 
   @override
   void initState() {
@@ -71,61 +72,72 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(
-              color: const Color(0xFFCBD5E1),
-              width: 1,
+        Focus(
+          onFocusChange: (hasFocus) {
+            setState(() => _isFocused = hasFocus);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+                width: _isFocused ? 1.5 : 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
             ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              // Prefix +88
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                child: const Text(
-                  '+88',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: kInk,
-                  ),
-                ),
-              ),
-              // Divider
-              Container(
-                width: 1,
-                height: 24,
-                color: const Color(0xFFE2E8F0),
-              ),
-              // Phone input
-              Expanded(
-                child: TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    hintText: widget.hint,
-                    hintStyle: const TextStyle(
-                      color: Color(0xFFD1D5DB),
+            child: Row(
+              children: [
+                // Prefix +88
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: const Text(
+                    '+88',
+                    style: TextStyle(
                       fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: kInk,
+                      letterSpacing: 0.3,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    isDense: true,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: kInk,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
+                // Divider
+                Container(
+                  width: 1,
+                  height: 20,
+                  color: const Color(0xFFE5E7EB),
+                ),
+                // Phone input
+                Expanded(
+                  child: TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      hintText: widget.hint,
+                      hintStyle: const TextStyle(
+                        color: Color(0xFFD1D5DB),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 0.5,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: kInk,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.3,
+                    ),
+                    cursorColor: kPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 14),
