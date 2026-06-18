@@ -1,10 +1,11 @@
 /// Manage custom warranty categories with icon selection.
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide FormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import '../components/index.dart';
 import '../core/providers/categories_provider.dart';
 import '../models/category.dart';
 import '../theme.dart';
@@ -321,17 +322,11 @@ class _CategoryDialogState extends State<_CategoryDialog> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            TextField(
+            FormField(
+              label: 'Category Name',
               controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Category Name',
-                hintText: 'e.g., Electronics',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              hint: 'e.g., Electronics',
             ),
-            const SizedBox(height: 20),
             const Text(
               'Select Icon:',
               style: TextStyle(fontWeight: FontWeight.w600),
