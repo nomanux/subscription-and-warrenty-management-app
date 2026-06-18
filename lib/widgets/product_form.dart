@@ -643,7 +643,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 28),
               // SECTION 2: Shop & Location Info
-              const SizedBox(height: 8),
+              const SizedBox(height: 28),
               _SectionHeader(
                 icon: HugeIcons.strokeRoundedBuilding03,
                 title: 'Shop & Location Info',
@@ -670,7 +670,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 controller: _notes,
                 hint: 'Serial #, model, or other details...',
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               // SECTION 3: Photos & Documents (Always Open)
               _SectionHeader(
                 icon: HugeIcons.strokeRoundedImage01,
