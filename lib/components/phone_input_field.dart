@@ -75,10 +75,10 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(
-              color: const Color(0xFFCBD5E1),
-              width: 1,
+              color: kPrimary,
+              width: 2,
             ),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
