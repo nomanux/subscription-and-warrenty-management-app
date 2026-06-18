@@ -7,13 +7,14 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide FormField;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../components/index.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -409,12 +410,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 subtitle: 'Basic warranty information',
               ),
               const SizedBox(height: 16),
-              _FormField(
+              FormField(
                 label: 'What are you insuring? *',
                 controller: _name,
                 hint: 'e.g., Samsung Smart TV',
               ),
-              _FormField(
+              FormField(
                 label: 'Brand (optional)',
                 controller: _brand,
                 hint: 'e.g., Samsung',
@@ -462,7 +463,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _StandardDropdown<String>(
+              StandardDropdown<String>(
                 value: _location.text.isEmpty ? _locations.first : _location.text,
                 items: [
                   ..._locations.map(
@@ -570,7 +571,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 1,
-                    child: _StandardDropdown<String>(
+                    child: StandardDropdown<String>(
                       value: _durationUnit,
                       items: [
                         DropdownMenuItem(
@@ -649,23 +650,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 title: 'Shop & Location Info',
               ),
               const SizedBox(height: 16),
-              _FormField(
+              FormField(
                 label: 'Location (optional)',
                 controller: _location,
                 hint: 'e.g., Bedroom, Living Room',
               ),
-              _FormField(
+              FormField(
                 label: 'Shop name (optional)',
                 controller: _shopName,
                 hint: 'e.g., Electronics World',
               ),
-              _FormField(
+              FormField(
                 label: 'Shop phone (optional)',
                 controller: _shopPhoneNumber,
                 hint: '+1 234 567 8900',
                 keyboardType: TextInputType.phone,
               ),
-              _FormField(
+              FormField(
                 label: 'Notes (optional)',
                 controller: _notes,
                 hint: 'Serial #, model, or other details...',
@@ -793,82 +794,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A label shown above a form field.
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: kInk,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-/// A labelled, comfortably-sized text field.
-class _FormField extends StatelessWidget {
-  const _FormField({
-    required this.label,
-    required this.controller,
-    this.hint,
-    this.keyboardType,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final String? hint;
-  final TextInputType? keyboardType;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FieldLabel(label),
-        TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 14, color: kInk),
-          decoration: InputDecoration(
-            hintText: hint,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFCBD5E1),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: kPrimary,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-      ],
     );
   }
 }
@@ -1349,133 +1274,6 @@ class _ProductPhotoSectionState extends State<_ProductPhotoSection> {
 
 /// Reusable photo action button.
 /// Standard dropdown field with Material Design 3 styling.
-class _StandardDropdown<T> extends StatefulWidget {
-  const _StandardDropdown({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-    this.icon,
-  });
-
-  final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-  final IconData? icon;
-
-  @override
-  State<_StandardDropdown<T>> createState() => _StandardDropdownState<T>();
-}
-
-class _StandardDropdownState<T> extends State<_StandardDropdown<T>> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final displayText = widget.items
-        .firstWhere((item) => item.value == widget.value,
-            orElse: () => DropdownMenuItem(
-                value: widget.value,
-                child: Text(widget.value.toString())))
-        .child;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: GestureDetector(
-        onTap: () => _showCustomMenu(context, displayText),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(
-              color: _isHovering ? kPrimary : const Color(0xFFCBD5E1),
-              width: _isHovering ? 1.5 : 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: DefaultTextStyle(
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: kInk,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  child: displayText,
-                ),
-              ),
-              const Icon(Icons.expand_more, color: kPrimary, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showCustomMenu(BuildContext context, Widget displayText) {
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null) return;
-
-    final pos = box.localToGlobal(Offset.zero);
-    final menuItems = widget.items
-        .map((item) {
-          final isSelected = item.value == widget.value;
-          return PopupMenuItem<T>(
-            value: item.value,
-            height: 44,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                color: isSelected ? kPrimary.withValues(alpha: 0.12) : Colors.transparent,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DefaultTextStyle(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isSelected ? kPrimary : kInk,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                      child: item.child,
-                    ),
-                  ),
-                  if (isSelected)
-                    const Icon(Icons.check, color: kPrimary, size: 18),
-                ],
-              ),
-            ),
-          );
-        })
-        .toList();
-
-    showMenu<T>(
-      context: context,
-      position: RelativeRect.fromLTRB(
-        pos.dx,
-        pos.dy + box.size.height + 8,
-        pos.dx + box.size.width,
-        0,
-      ),
-      items: menuItems,
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: kPrimary.withValues(alpha: 0.3), width: 1),
-      ),
-      color: Colors.white,
-    ).then((value) {
-      if (value != null) {
-        widget.onChanged(value);
-      }
-    });
-  }
-}
-
 class _PhotoActionButton extends StatefulWidget {
   const _PhotoActionButton({
     required this.icon,
