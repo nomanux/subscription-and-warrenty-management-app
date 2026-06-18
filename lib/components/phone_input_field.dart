@@ -115,6 +115,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                       letterSpacing: 0.5,
                     ),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 12,
