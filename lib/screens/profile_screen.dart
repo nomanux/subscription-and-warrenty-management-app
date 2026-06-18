@@ -3,11 +3,12 @@ library;
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide FormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../components/index.dart';
 import '../core/providers/theme_provider.dart';
 import '../core/providers/user_provider.dart';
 import '../features/auth/presentation/providers/google_auth_provider.dart';
