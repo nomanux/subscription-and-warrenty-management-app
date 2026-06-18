@@ -87,7 +87,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             color: Colors.white,
             border: Border.all(
               color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
-              width: 0.5,
+              width: 1.0,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
