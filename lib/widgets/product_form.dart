@@ -658,11 +658,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 controller: _shopName,
                 hint: 'e.g., Electronics World',
               ),
-              FormField(
+              PhoneInputField(
                 label: 'Shop phone (optional)',
                 controller: _shopPhoneNumber,
-                hint: '+88 1XXXXXXXXXX',
-                keyboardType: TextInputType.phone,
+                hint: '01XXXX XXX XXXX',
               ),
               FormField(
                 label: 'Notes (optional)',
