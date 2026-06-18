@@ -58,8 +58,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _saving = false;
   String? _error;
   List<String> _locations = ['Home', 'Office'];
-  bool _showOptionalDetails = false;
-  bool _showPhotosSection = false;
 
   bool get _isEdit => widget.initial != null;
 
@@ -243,23 +241,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     } catch (_) {
       return 'Invalid date';
     }
-  }
-
-  int _getFilledOptionalCount() {
-    int count = 0;
-    if (_shopName.text.trim().isNotEmpty) count++;
-    if (_shopPhoneNumber.text.trim().isNotEmpty) count++;
-    if (_notes.text.trim().isNotEmpty) count++;
-    return count;
-  }
-
-  int _getFilledMediaCount() {
-    int count = 0;
-    if (_productImageUri != null) count++;
-    if (_warrantyCardUri != null) count++;
-    if (_localImageUri != null) count++;
-    if (_visitingCardUri != null) count++;
-    return count;
   }
 
   Future<void> _save() async {
@@ -661,122 +642,108 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              // SECTION 2: Optional Details (Collapsible)
-              _CollapsibleSection(
+              // SECTION 2: Shop & Location Info
+              const SizedBox(height: 8),
+              _SectionHeader(
                 icon: HugeIcons.strokeRoundedBuilding03,
                 title: 'Shop & Location Info',
-                subtitle: '${_getFilledOptionalCount()}/3 details added',
-                isExpanded: _showOptionalDetails,
-                onToggle: () => setState(
-                  () => _showOptionalDetails = !_showOptionalDetails,
-                ),
-                child: _showOptionalDetails
-                    ? Column(
-                        children: [
-                          _FormField(
-                            label: 'Shop name (optional)',
-                            controller: _shopName,
-                            hint: 'e.g., Electronics World',
-                          ),
-                          _FormField(
-                            label: 'Shop phone (optional)',
-                            controller: _shopPhoneNumber,
-                            hint: '+1 234 567 8900',
-                            keyboardType: TextInputType.phone,
-                          ),
-                          _FormField(
-                            label: 'Notes (optional)',
-                            controller: _notes,
-                            hint: 'Serial #, model, or other details...',
-                          ),
-                        ],
-                      )
-                    : null,
               ),
               const SizedBox(height: 16),
-              // SECTION 3: Photos & Documents (Collapsible)
-              _CollapsibleSection(
+              _FormField(
+                label: 'Location (optional)',
+                controller: _location,
+                hint: 'e.g., Bedroom, Living Room',
+              ),
+              _FormField(
+                label: 'Shop name (optional)',
+                controller: _shopName,
+                hint: 'e.g., Electronics World',
+              ),
+              _FormField(
+                label: 'Shop phone (optional)',
+                controller: _shopPhoneNumber,
+                hint: '+1 234 567 8900',
+                keyboardType: TextInputType.phone,
+              ),
+              _FormField(
+                label: 'Notes (optional)',
+                controller: _notes,
+                hint: 'Serial #, model, or other details...',
+              ),
+              const SizedBox(height: 24),
+              // SECTION 3: Photos & Documents (Always Open)
+              _SectionHeader(
                 icon: HugeIcons.strokeRoundedImage01,
                 title: 'Photos & Documents',
-                subtitle: '${_getFilledMediaCount()}/4 items added',
-                isExpanded: _showPhotosSection,
-                onToggle: () =>
-                    setState(() => _showPhotosSection = !_showPhotosSection),
-                child: _showPhotosSection
-                    ? Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Product Photo',
-                            style: TextStyle(
-                              color: kInk,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ProductPhotoSection(
-                            imageUri: _productImageUri,
-                            onCamera: () => _pickImage(
-                              type: 'product',
-                              source: ImageSource.camera,
-                            ),
-                            onGallery: () => _pickImage(
-                              type: 'product',
-                              source: ImageSource.gallery,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'Warranty Card',
-                            style: TextStyle(
-                              color: kInk,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ExpandableDocumentItem(
-                            title: 'Warranty Card',
-                            onAdd: () => _pickImage(type: 'warranty'),
-                            hasImage: _warrantyCardUri != null,
-                            imageUri: _warrantyCardUri,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Receipt',
-                            style: TextStyle(
-                              color: kInk,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ExpandableDocumentItem(
-                            title: 'Receipt',
-                            onAdd: () => _pickImage(type: 'receipt'),
-                            hasImage: _localImageUri != null,
-                            imageUri: _localImageUri,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Other Documents',
-                            style: TextStyle(
-                              color: kInk,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ExpandableDocumentItem(
-                            title: 'Visiting Card / User Manual',
-                            onAdd: () => _pickImage(type: 'visiting'),
-                            hasImage: _visitingCardUri != null,
-                            imageUri: _visitingCardUri,
-                          ),
-                        ],
-                      )
-                    : null,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Product Photo',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ProductPhotoSection(
+                imageUri: _productImageUri,
+                onCamera: () => _pickImage(
+                  type: 'product',
+                  source: ImageSource.camera,
+                ),
+                onGallery: () => _pickImage(
+                  type: 'product',
+                  source: ImageSource.gallery,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Warranty Card',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ExpandableDocumentItem(
+                title: 'Warranty Card',
+                onAdd: () => _pickImage(type: 'warranty'),
+                hasImage: _warrantyCardUri != null,
+                imageUri: _warrantyCardUri,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Receipt',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ExpandableDocumentItem(
+                title: 'Receipt',
+                onAdd: () => _pickImage(type: 'receipt'),
+                hasImage: _localImageUri != null,
+                imageUri: _localImageUri,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Other Documents',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _ExpandableDocumentItem(
+                title: 'Visiting Card / User Manual',
+                onAdd: () => _pickImage(type: 'visiting'),
+                hasImage: _visitingCardUri != null,
+                imageUri: _visitingCardUri,
               ),
               const SizedBox(height: 28),
               if (_error != null) ...[
@@ -1233,99 +1200,6 @@ class _DatePickerFieldState extends State<_DatePickerField> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Collapsible section for optional fields.
-class _CollapsibleSection extends StatelessWidget {
-  const _CollapsibleSection({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isExpanded,
-    required this.onToggle,
-    required this.child,
-  });
-
-  final List<List<dynamic>> icon;
-  final String title;
-  final String subtitle;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final Widget? child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                borderRadius: BorderRadius.circular(12),
-                color: isExpanded
-                    ? kPrimary.withValues(alpha: 0.05)
-                    : Colors.transparent,
-              ),
-              child: Row(
-                children: [
-                  HugeIcon(
-                    icon: icon,
-                    color: isExpanded ? kPrimary : kMuted,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: kInk,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: const TextStyle(color: kMuted, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  HugeIcon(
-                    icon: isExpanded
-                        ? HugeIcons.strokeRoundedArrowUp01
-                        : HugeIcons.strokeRoundedArrowDown01,
-                    color: kPrimary,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (isExpanded && child != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              borderRadius: BorderRadius.circular(12),
-              color: const Color(0xFFFAFAFA),
-            ),
-            child: child,
-          ),
-        ],
-      ],
     );
   }
 }
