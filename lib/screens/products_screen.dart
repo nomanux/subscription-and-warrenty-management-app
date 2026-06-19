@@ -301,11 +301,15 @@ class _FilterChip extends StatelessWidget {
             WText(icon!, fontSize: 14),
             const SizedBox(width: 6),
           ],
-          WText(
-            label,
-            fontSize: 13,
-            color: isSelected ? Colors.white : kInk,
-            className: 'font-medium',
+          Flexible(
+            child: WText(
+              label,
+              fontSize: 13,
+              color: isSelected ? Colors.white : kInk,
+              className: 'font-medium',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

@@ -23,16 +23,9 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
-    )..repeat();
-
-    // Show splash for 3 seconds, then transition
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        widget.onComplete();
-      }
-    });
+    )..repeat(reverse: true);
   }
 
   @override
@@ -49,10 +42,10 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo with scale animation
+            // Logo with zoom animation
             ScaleTransition(
-              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+              scale: Tween<double>(begin: 0.9, end: 1.1).animate(
+                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
               ),
               child: SvgPicture.asset(
                 'assets/w.svg',
@@ -81,36 +74,6 @@ class _SplashScreenState extends State<SplashScreen>
                 fontSize: 14,
                 color: kMuted,
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // Loading spinner
-            RotationTransition(
-              turns: _controller,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(
-                    color: kPrimary.withValues(alpha: 0.2),
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: kPrimary.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(kPrimary),
-                    strokeWidth: 3,
-                  ),
-                ),
               ),
             ),
           ],

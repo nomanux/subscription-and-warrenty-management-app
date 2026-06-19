@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../components/index.dart';
 import '../core/providers/theme_provider.dart';
 import '../core/providers/user_provider.dart';
 import '../features/auth/presentation/providers/google_auth_provider.dart';
@@ -31,9 +30,9 @@ class ProfileScreen extends ConsumerWidget {
     if (image != null) {
       await ref.read(userProvider.notifier).updateProfileImage(image.path);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile image updated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Profile image updated')));
       }
     }
   }
@@ -42,14 +41,17 @@ class ProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(userProvider);
     userAsync.whenData((user) {
       final nameController = TextEditingController(text: user.name ?? '');
-      final phoneController =
-          TextEditingController(text: user.phoneNumber ?? '');
+      final phoneController = TextEditingController(
+        text: user.phoneNumber ?? '',
+      );
       final formKey = GlobalKey<FormState>();
 
       showDialog(
         context: context,
         builder: (context) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           elevation: 0,
           backgroundColor: Colors.transparent,
           child: Container(
@@ -96,10 +98,7 @@ class ProfileScreen extends ConsumerWidget {
                               ),
                               Text(
                                 'Update your profile information',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: kMuted,
-                                ),
+                                style: TextStyle(fontSize: 12, color: kMuted),
                               ),
                             ],
                           ),
@@ -130,8 +129,10 @@ class ProfileScreen extends ConsumerWidget {
                             size: 20,
                           ),
                         ),
-                        prefixIconConstraints:
-                            const BoxConstraints(minWidth: 0, minHeight: 0),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          minHeight: 0,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: kMuted, width: 1),
@@ -142,8 +143,10 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide:
-                              const BorderSide(color: kPrimary, width: 2),
+                          borderSide: const BorderSide(
+                            color: kPrimary,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
@@ -184,8 +187,10 @@ class ProfileScreen extends ConsumerWidget {
                             size: 20,
                           ),
                         ),
-                        prefixIconConstraints:
-                            const BoxConstraints(minWidth: 0, minHeight: 0),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          minHeight: 0,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: kMuted, width: 1),
@@ -196,8 +201,10 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide:
-                              const BorderSide(color: kPrimary, width: 2),
+                          borderSide: const BorderSide(
+                            color: kPrimary,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
@@ -225,15 +232,11 @@ class ProfileScreen extends ConsumerWidget {
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context),
                             style: OutlinedButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              side: const BorderSide(
-                                color: kMuted,
-                                width: 1.5,
-                              ),
+                              side: const BorderSide(color: kMuted, width: 1.5),
                             ),
                             child: const Text(
                               'Cancel',
@@ -343,8 +346,9 @@ class ProfileScreen extends ConsumerWidget {
                           if (googleAccount?.photoUrl?.isNotEmpty ?? false) {
                             return CircleAvatar(
                               radius: 40,
-                              backgroundImage:
-                                  NetworkImage(googleAccount!.photoUrl!),
+                              backgroundImage: NetworkImage(
+                                googleAccount!.photoUrl!,
+                              ),
                             );
                           }
                           if (user.profileImagePath != null &&
@@ -352,37 +356,40 @@ class ProfileScreen extends ConsumerWidget {
                               File(user.profileImagePath!).existsSync()) {
                             return CircleAvatar(
                               radius: 40,
-                              backgroundImage:
-                                  FileImage(File(user.profileImagePath!)),
+                              backgroundImage: FileImage(
+                                File(user.profileImagePath!),
+                              ),
                             );
                           }
                           return CircleAvatar(
                             radius: 40,
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.22),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.22,
+                            ),
                             child: HugeIcon(
-                                icon: HugeIcons.strokeRoundedUserCircle,
-                                color: Colors.white,
-                                size: 44),
+                              icon: HugeIcons.strokeRoundedUserCircle,
+                              color: Colors.white,
+                              size: 44,
+                            ),
                           );
                         },
                         loading: () => CircleAvatar(
                           radius: 40,
-                          backgroundColor:
-                              Colors.white.withValues(alpha: 0.22),
+                          backgroundColor: Colors.white.withValues(alpha: 0.22),
                           child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedUserCircle,
-                              color: Colors.white,
-                              size: 44),
+                            icon: HugeIcons.strokeRoundedUserCircle,
+                            color: Colors.white,
+                            size: 44,
+                          ),
                         ),
                         error: (_, _) => CircleAvatar(
                           radius: 40,
-                          backgroundColor:
-                              Colors.white.withValues(alpha: 0.22),
+                          backgroundColor: Colors.white.withValues(alpha: 0.22),
                           child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedUserCircle,
-                              color: Colors.white,
-                              size: 44),
+                            icon: HugeIcons.strokeRoundedUserCircle,
+                            color: Colors.white,
+                            size: 44,
+                          ),
                         ),
                       ),
                       Positioned(
@@ -407,8 +414,15 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 userAsync.when(
                   data: (user) {
-                    final displayName = googleAccount?.displayName ?? user.name ?? 'Warantee User';
-                    final displayEmail = googleAccount?.email ?? userAuthState.email ?? user.phoneNumber ?? 'Tap Edit Profile';
+                    final displayName =
+                        googleAccount?.displayName ??
+                        user.name ??
+                        'Warantee User';
+                    final displayEmail =
+                        googleAccount?.email ??
+                        userAuthState.email ??
+                        user.phoneNumber ??
+                        'Tap Edit Profile';
                     return Column(
                       children: [
                         Text(
@@ -504,7 +518,9 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: googleAccount?.email ?? 'Connect for backup',
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const GoogleConnectScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const GoogleConnectScreen(),
+                    ),
                   ),
                 ),
                 _SettingTile(
@@ -564,7 +580,9 @@ class ProfileScreen extends ConsumerWidget {
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: const Text('Logout'),
-                            content: const Text('Are you sure you want to logout?'),
+                            content: const Text(
+                              'Are you sure you want to logout?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
@@ -573,9 +591,13 @@ class ProfileScreen extends ConsumerWidget {
                               TextButton(
                                 onPressed: () async {
                                   Navigator.pop(ctx);
-                                  await ref.read(userAuthStateProvider.notifier).logout();
+                                  await ref
+                                      .read(userAuthStateProvider.notifier)
+                                      .logout();
                                   if (context.mounted) {
-                                    Navigator.of(context).pushNamedAndRemoveUntil(
+                                    Navigator.of(
+                                      context,
+                                    ).pushNamedAndRemoveUntil(
                                       '/',
                                       (route) => false,
                                     );
@@ -591,13 +613,18 @@ class ProfileScreen extends ConsumerWidget {
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 4,
+                        ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Color(0xFFDC2626).withValues(alpha: 0.12),
+                                color: Color(
+                                  0xFFDC2626,
+                                ).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: HugeIcon(
@@ -672,21 +699,27 @@ class _StatStrip extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: HugeIcon(
-                icon: HugeIcons.strokeRoundedShield01,
-                color: kPrimary,
-                size: 24),
+              icon: HugeIcons.strokeRoundedShield01,
+              color: kPrimary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$total',
-                  style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: kInk)),
-              const Text('warranties tracked',
-                  style: TextStyle(color: kMuted, fontSize: 13)),
+              Text(
+                '$total',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: kInk,
+                ),
+              ),
+              const Text(
+                'warranties tracked',
+                style: TextStyle(color: kMuted, fontSize: 13),
+              ),
             ],
           ),
         ],
@@ -718,26 +751,35 @@ class _SettingTile extends StatelessWidget {
         shadowColor: Colors.black.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: kPrimary.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: HugeIcon(icon: icon, color: kPrimary, size: 20),
-        ),
-        title: Text(title,
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: kPrimary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: HugeIcon(icon: icon, color: kPrimary, size: 20),
+          ),
+          title: Text(
+            title,
             style: const TextStyle(
-                fontWeight: FontWeight.w600, color: kInk, fontSize: 15)),
-        subtitle: Text(subtitle,
-            style: const TextStyle(color: kMuted, fontSize: 12)),
-        trailing: HugeIcon(
+              fontWeight: FontWeight.w600,
+              color: kInk,
+              fontSize: 15,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: const TextStyle(color: kMuted, fontSize: 12),
+          ),
+          trailing: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowRight01,
             color: kMuted,
-            size: 18),
-        onTap: onTap,
+            size: 18,
+          ),
+          onTap: onTap,
         ),
       ),
     );
@@ -745,10 +787,7 @@ class _SettingTile extends StatelessWidget {
 }
 
 class _ThemeToggleTile extends StatelessWidget {
-  const _ThemeToggleTile({
-    required this.isDarkMode,
-    required this.onToggle,
-  });
+  const _ThemeToggleTile({required this.isDarkMode, required this.onToggle});
 
   final bool isDarkMode;
   final VoidCallback onToggle;
@@ -763,8 +802,9 @@ class _ThemeToggleTile extends StatelessWidget {
         shadowColor: Colors.black.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         child: ListTile(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(

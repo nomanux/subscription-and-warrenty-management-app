@@ -167,16 +167,26 @@ class _HeroHeader extends ConsumerWidget {
     // Get user data
     final userAuthState = ref.watch(userAuthStateProvider);
     final userAsync = ref.watch(userProvider);
-    final googleAccount = userAuthState.isGoogleLogin
-        ? ref.watch(googleAccountProvider).asData?.value
-        : null;
+    final googleAccountAsync = ref.watch(googleAccountProvider);
 
-    // Determine display name
-    String displayName = userAsync.when(
-      data: (user) =>
-          googleAccount?.displayName ?? user.name ?? 'User',
+    // Determine display name (prioritizes Google name)
+    String displayName = googleAccountAsync.when(
+      data: (googleAccount) {
+        // If Google logged in and has a name, use it
+        if (googleAccount?.displayName != null) {
+          return googleAccount!.displayName!;
+        }
+        // Fall back to user name from auth provider
+        return userAsync.maybeWhen(
+          data: (user) => user.name ?? 'User',
+          orElse: () => 'User',
+        );
+      },
       loading: () => 'User',
-      error: (_, _) => 'User',
+      error: (_, __) => userAsync.maybeWhen(
+        data: (user) => user.name ?? 'User',
+        orElse: () => 'User',
+      ),
     );
 
     return Container(

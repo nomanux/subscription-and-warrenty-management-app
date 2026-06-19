@@ -18,7 +18,6 @@ import '../components/index.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
-import 'receipt_image.dart';
 
 /// Opens the add/edit form as a full page. Pass [initial] to edit; omit to add.
 Future<void> showProductForm(BuildContext context, {Product? initial}) {
@@ -72,9 +71,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _brand = TextEditingController(text: p?.brand ?? '');
     _location = TextEditingController(text: p?.location ?? '');
     _shopName = TextEditingController(text: p?.shopName ?? '');
-    _shopPhoneNumber = TextEditingController(
-      text: p?.shopPhoneNumber ?? '+88',
-    );
+    _shopPhoneNumber = TextEditingController(text: p?.shopPhoneNumber ?? '+88');
     _notes = TextEditingController(text: p?.notes ?? '');
     final purchase = (p?.purchaseDate ?? '');
     _purchaseDate = TextEditingController(
@@ -131,17 +128,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             fillColor: Colors.white,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFCBD5E1),
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: kPrimary,
-                width: 1.5,
-              ),
+              borderSide: const BorderSide(color: kPrimary, width: 1.5),
             ),
           ),
         ),
@@ -182,10 +173,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     setState(() => _error = null);
     try {
       final picker = ImagePicker();
-      final file = await picker.pickImage(
-        source: source,
-        imageQuality: 70,
-      );
+      final file = await picker.pickImage(source: source, imageQuality: 70);
       if (file == null) return;
 
       var bytes = await file.readAsBytes();
@@ -466,7 +454,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 8),
               StandardDropdown<String>(
-                value: _location.text.isEmpty ? _locations.first : _location.text,
+                value: _location.text.isEmpty
+                    ? _locations.first
+                    : _location.text,
                 items: [
                   ..._locations.map(
                     (e) => DropdownMenuItem(
@@ -686,14 +676,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               const SizedBox(height: 12),
               ProductPhotoSection(
                 imageUri: _productImageUri,
-                onCamera: () => _pickImage(
-                  type: 'product',
-                  source: ImageSource.camera,
-                ),
-                onGallery: () => _pickImage(
-                  type: 'product',
-                  source: ImageSource.gallery,
-                ),
+                onCamera: () =>
+                    _pickImage(type: 'product', source: ImageSource.camera),
+                onGallery: () =>
+                    _pickImage(type: 'product', source: ImageSource.gallery),
               ),
               const SizedBox(height: 24),
               const Text(

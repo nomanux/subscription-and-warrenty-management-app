@@ -30,50 +30,29 @@ Future<void> main() async {
   // Initialize the flutter_twind styling system (Tailwind-style classNames).
   WindConfig.initialize();
 
+  // Defer all heavy initialization until after splash screen
+  // Init in background to allow app to start immediately
+  _initializeAppAsync();
+
+  runApp(const ProviderScope(child: WarrantyVaultApp()));
+}
+
+// Initialize all heavy services in background (non-blocking)
+Future<void> _initializeAppAsync() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    debugPrint('Firebase initialization error: $e');
+    debugPrint('Firebase initialization error (non-fatal): $e');
   }
 
-  // Google auth initialization is deferred until after login
-  // This prevents the account chooser from appearing on app startup
-  // It will be initialized when user signs in with Google
-
-  // Seed demo data disabled temporarily while we debug
-  // TODO: Re-enable after fixing initialization issue
-  // try {
-  //   await productService.seedDemoDataIfEmpty().timeout(
-  //     const Duration(seconds: 5),
-  //     onTimeout: () => debugPrint('Seeding timeout - continuing anyway'),
-  //   );
-  // } catch (e) {
-  //   debugPrint('Demo data seeding error (non-fatal): $e');
-  // }
-
-  // Seed Firestore with demo data including receipt images
-  try {
-    await _seedFirestoreDemoData();
-  } catch (e) {
-    debugPrint('Firestore seeding error (non-fatal): $e');
-  }
-
-  // Initialize local database (non-blocking, ignore errors)
+  // Initialize local database in background
   try {
     final db = AppDatabase();
     await seedLocalIfEmpty(db);
-    runApp(
-      ProviderScope(
-        overrides: [appDatabaseProvider.overrideWithValue(db)],
-        child: const WarrantyVaultApp(),
-      ),
-    );
   } catch (e) {
     debugPrint('Database initialization error (non-fatal): $e');
-    // App can function without local DB - using Firestore
-    runApp(const ProviderScope(child: WarrantyVaultApp()));
   }
 }
 
@@ -230,16 +209,19 @@ class _AppRootState extends State<_AppRoot> {
   bool _showSplash = true;
 
   @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() => _showSplash = false);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Show splash then home (no login required)
     if (_showSplash) {
-      return SplashScreen(
-        onComplete: () {
-          setState(() {
-            _showSplash = false;
-          });
-        },
-      );
+      return SplashScreen(onComplete: () {});
     }
     return const HomeShell();
   }
@@ -284,38 +266,55 @@ class _HomeShellState extends State<HomeShell> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: BottomAppBar(
-        color: kSurface,
-        height: 66,
-        padding: EdgeInsets.zero,
-        child: Row(
-          children: [
-            _NavItem(
-              icon: HugeIcons.strokeRoundedHome01,
-              label: 'Home',
-              selected: _index == 0,
-              onTap: () => _go(0),
-            ),
-            _NavItem(
-              icon: HugeIcons.strokeRoundedFile01,
-              label: 'Warranties',
-              selected: _index == 1,
-              onTap: () => _go(1),
-            ),
-            _NavItem(
-              icon: HugeIcons.strokeRoundedNotification01,
-              label: 'Reminders',
-              selected: _index == 2,
-              onTap: () => _go(2),
-            ),
-            _NavItem(
-              icon: HugeIcons.strokeRoundedUserCircle,
-              label: 'Profile',
-              selected: _index == 3,
-              onTap: () => _go(3),
-            ),
-          ],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        child: KeyedSubtree(
+          key: ValueKey(_index),
+          child: pages[_index],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+        ),
+        child: BottomAppBar(
+          color: kSurface,
+          height: 66,
+          padding: EdgeInsets.zero,
+          elevation: 0,
+          child: Row(
+            children: [
+              _NavItem(
+                icon: HugeIcons.strokeRoundedHome01,
+                label: 'Home',
+                selected: _index == 0,
+                onTap: () => _go(0),
+              ),
+              _NavItem(
+                icon: HugeIcons.strokeRoundedFile01,
+                label: 'Warranties',
+                selected: _index == 1,
+                onTap: () => _go(1),
+              ),
+              _NavItem(
+                icon: HugeIcons.strokeRoundedNotification01,
+                label: 'Reminders',
+                selected: _index == 2,
+                onTap: () => _go(2),
+              ),
+              _NavItem(
+                icon: HugeIcons.strokeRoundedUserCircle,
+                label: 'Profile',
+                selected: _index == 3,
+                onTap: () => _go(3),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -342,17 +341,34 @@ class _NavItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            HugeIcon(icon: icon, color: color, size: 22),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    color: color,
-                    fontSize: 11,
-                    fontWeight:
-                        selected ? FontWeight.w700 : FontWeight.w500)),
+            // Top indicator bar when selected
+            if (selected)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 3,
+                  color: kPrimary,
+                ),
+              ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                HugeIcon(icon: icon, color: color, size: 22),
+                const SizedBox(height: 2),
+                Text(label,
+                    style: TextStyle(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500)),
+              ],
+            ),
           ],
         ),
       ),
