@@ -4,11 +4,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import '../core/providers/user_provider.dart';
 import '../features/auth/presentation/providers/google_auth_provider.dart';
-import '../features/auth/presentation/providers/user_auth_provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme.dart';
@@ -165,7 +163,6 @@ class _HeroHeader extends ConsumerWidget {
     final topPadding = MediaQuery.of(context).padding.top;
 
     // Get user data
-    final userAuthState = ref.watch(userAuthStateProvider);
     final userAsync = ref.watch(userProvider);
     final googleAccountAsync = ref.watch(googleAccountProvider);
 
@@ -183,11 +180,14 @@ class _HeroHeader extends ConsumerWidget {
         );
       },
       loading: () => 'User',
-      error: (_, __) => userAsync.maybeWhen(
+      error: (_, _) => userAsync.maybeWhen(
         data: (user) => user.name ?? 'User',
         orElse: () => 'User',
       ),
     );
+
+    // Get Google account for profile image
+    final googleAccount = googleAccountAsync.asData?.value;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, topPadding + 22, 20, 44),
@@ -208,15 +208,29 @@ class _HeroHeader extends ConsumerWidget {
             onTap: () => Scaffold.of(context).openDrawer(),
             borderRadius: BorderRadius.circular(14),
             child: Container(
-              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(14),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
               ),
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedMenu01,
-                color: Colors.white,
-                size: 24,
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: googleAccount?.photoUrl?.isNotEmpty == true
+                    ? Colors.transparent
+                    : Colors.white.withValues(alpha: 0.25),
+                backgroundImage:
+                    googleAccount?.photoUrl?.isNotEmpty == true
+                        ? NetworkImage(googleAccount!.photoUrl!)
+                        : null,
+                child: googleAccount?.photoUrl?.isNotEmpty != true
+                    ? Text(
+                        _getInitials(displayName),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : null,
               ),
             ),
           ),
@@ -246,6 +260,16 @@ class _HeroHeader extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) {
+      return parts[0].substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1))
+        .toUpperCase();
   }
 }
 
@@ -282,7 +306,9 @@ class _SummaryCard extends StatelessWidget {
               DonutChart(
                 size: 132,
                 centerValue: '${stats.total}',
-                centerLabel: stats.total == 1 ? 'Warranty' : 'Warranties',
+                centerLabel: stats.total == 0
+                    ? 'Products'
+                    : (stats.total == 1 ? 'Warranty' : 'Warranties'),
                 segments: [
                   DonutSegment(
                     stats.active,

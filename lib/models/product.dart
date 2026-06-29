@@ -59,6 +59,64 @@ enum ProductSource {
   }
 }
 
+/// A single warranty coverage.
+class WarrantyCoverage {
+  const WarrantyCoverage({
+    required this.id,
+    required this.type,
+    required this.duration,
+    required this.durationUnit,
+    required this.startDate,
+    this.expiryDate,
+  });
+
+  final String id;
+  final String type;
+  final int duration;
+  final String durationUnit;
+  final String startDate;
+  final String? expiryDate;
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'type': type,
+        'duration': duration,
+        'durationUnit': durationUnit,
+        'startDate': startDate,
+        'expiryDate': expiryDate,
+      };
+
+  static WarrantyCoverage? fromMap(Map<String, dynamic>? map) {
+    if (map == null) return null;
+    return WarrantyCoverage(
+      id: map['id'] as String? ?? '',
+      type: map['type'] as String? ?? 'Manufacturer Warranty',
+      duration: (map['duration'] as num?)?.toInt() ?? 1,
+      durationUnit: map['durationUnit'] as String? ?? 'years',
+      startDate: map['startDate'] as String? ?? '',
+      expiryDate: map['expiryDate'] as String?,
+    );
+  }
+
+  WarrantyCoverage copyWith({
+    String? id,
+    String? type,
+    int? duration,
+    String? durationUnit,
+    String? startDate,
+    String? expiryDate,
+  }) {
+    return WarrantyCoverage(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      duration: duration ?? this.duration,
+      durationUnit: durationUnit ?? this.durationUnit,
+      startDate: startDate ?? this.startDate,
+      expiryDate: expiryDate ?? this.expiryDate,
+    );
+  }
+}
+
 /// A receipt attached to a product.
 ///
 /// [uri] is local-only: a file path on the device, or a data/blob URI on web.
@@ -110,6 +168,7 @@ class ProductInput {
     this.visitingCard,
     this.warrantyCard,
     this.productImage,
+    this.coverages = const [],
   });
 
   final String productName;
@@ -129,6 +188,7 @@ class ProductInput {
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
   final ReceiptFile? productImage;
+  final List<WarrantyCoverage> coverages;
 }
 
 /// A full product record as stored in Firestore.
@@ -155,6 +215,7 @@ class Product {
     this.visitingCard,
     this.warrantyCard,
     this.productImage,
+    this.coverages = const [],
   });
 
   final String id;
@@ -180,9 +241,11 @@ class Product {
   final ReceiptFile? visitingCard;
   final ReceiptFile? warrantyCard;
   final ReceiptFile? productImage;
+  final List<WarrantyCoverage> coverages;
 
   /// Build from a Firestore document's data map plus its id.
   factory Product.fromMap(String id, Map<String, dynamic> data) {
+    final coveragesList = (data['coverages'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     return Product(
       id: id,
       productName: data['productName'] as String? ?? '',
@@ -214,6 +277,15 @@ class Product {
       productImage: ReceiptFile.fromMap(
         (data['productImage'] as Map?)?.cast<String, dynamic>(),
       ),
+      coverages: coveragesList
+          .map((c) => WarrantyCoverage.fromMap(c) ?? const WarrantyCoverage(
+                id: '',
+                type: 'Manufacturer Warranty',
+                duration: 1,
+                durationUnit: 'years',
+                startDate: '',
+              ))
+          .toList(),
     );
   }
 
@@ -241,9 +313,10 @@ class Product {
         'visitingCard': visitingCard?.toMap(),
         'warrantyCard': warrantyCard?.toMap(),
         'productImage': productImage?.toMap(),
+        'coverages': coverages.map((c) => c.toMap()).toList(),
       };
 
-  Product copyWith({WarrantyStatus? status}) {
+  Product copyWith({WarrantyStatus? status, List<WarrantyCoverage>? coverages}) {
     return Product(
       id: id,
       productName: productName,
@@ -266,6 +339,7 @@ class Product {
       visitingCard: visitingCard,
       warrantyCard: warrantyCard,
       productImage: productImage,
+      coverages: coverages ?? this.coverages,
     );
   }
 }

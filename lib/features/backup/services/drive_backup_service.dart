@@ -37,13 +37,13 @@ class DriveBackupService {
   bool get isConnected => GoogleAuthService.instance.current != null;
 
   /// Back up all warranties to Google Drive. Returns the created file name.
-  /// Silently attempts authentication without prompting.
-  Future<String> backupNow() => _backup(prompt: false);
+  /// Prompts for permission if needed.
+  Future<String> backupNow() => _backup(prompt: true);
 
   /// Restore the most recent Drive backup, merging entries by id.
   /// Returns the number of warranties restored.
-  /// Silently attempts authentication without prompting.
-  Future<int> restoreLatest() => _withApi(prompt: false, (api) async {
+  /// Prompts for permission if needed.
+  Future<int> restoreLatest() => _withApi(prompt: true, (api) async {
         final folderId = await _ensureFolder(api);
         final list = await api.files.list(
           q: "'$folderId' in parents and trashed = false "

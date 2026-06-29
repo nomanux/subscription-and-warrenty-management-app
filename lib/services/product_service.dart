@@ -1,24 +1,36 @@
-/// Product service — Cloud Firestore implementation.
+/// Product service — Cloud Firestore implementation with local Drift sync.
 ///
 /// Direct port of the React Native `productService.ts`. Data lives in the
 /// `products` collection. Dates are stored as ISO strings (matching the
 /// Product model), so no Timestamp mapping is needed. Status is recomputed on
 /// read so it stays current.
 ///
+/// All changes are synced to the local Drift database for offline access.
+///
 /// Note: there is no per-user scoping yet — every device shares the same
 /// `products` collection, exactly like the old app.
 library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:drift/drift.dart';
 
+import '../core/database/app_database.dart';
 import '../models/product.dart';
 import '../utils/warranty.dart';
 
 class ProductService {
-  ProductService({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance;
+  ProductService({
+    FirebaseFirestore? firestore,
+    this._localDb,
+  }) : _db = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _db;
+  AppDatabase? _localDb;
+
+  /// Set the local database for syncing (called after db initialization).
+  void setLocalDatabase(AppDatabase db) {
+    _localDb = db;
+  }
 
   static const String _collection = 'products';
 
@@ -91,6 +103,7 @@ class ProductService {
     );
 
     await ref.set(product.toMap());
+    await _syncToLocal(product);
     return product;
   }
 
@@ -129,110 +142,82 @@ class ProductService {
     );
 
     await _products.doc(id).set(updated.toMap());
+    await _syncToLocal(updated);
     return updated;
   }
 
   /// Permanently remove a product.
-  Future<void> deleteProduct(String id) => _products.doc(id).delete();
+  Future<void> deleteProduct(String id) async {
+    await _products.doc(id).delete();
+    await _syncDeleteLocal(id);
+  }
 
   /// Write a product under its existing id (create or overwrite).
   ///
   /// Used by Google Drive restore to merge a backup back into Firestore while
   /// preserving the original ids (so re-running a restore is idempotent).
-  Future<void> upsertProduct(Product product) =>
-      _products.doc(product.id).set(product.toMap());
+  Future<void> upsertProduct(Product product) async {
+    await _products.doc(product.id).set(product.toMap());
+    await _syncToLocal(product);
+  }
 
-  /// Seed demo data if collection is empty.
-  Future<void> seedDemoDataIfEmpty() async {
-    final existing = await _products.limit(1).get();
-    if (existing.docs.isNotEmpty) return;
-
-    final demoProducts = _getDemoProducts();
-    for (final product in demoProducts) {
-      await _products.doc(product.id).set(product.toMap());
+  /// Delete all products from Firestore (used for cleanup).
+  Future<void> deleteAllProducts() async {
+    final snapshot = await _products.get();
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
     }
   }
 
-  List<Product> _getDemoProducts() {
-    const demoImages = {
-      'Instant Hotpot': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-      'MacBook Pro 14"':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PnAAAADElEQVQI12P4z8BQDwAEBAH/wlseKgAAAABJRU5ErkJggg==',
-      'iPhone 15':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd3PnAAAADElEQVQI12NgYGBgAAAABAABSK+kcQAAAABJRU5ErkJggg==',
-      'Anker PowerBank':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP4//8/AwAI/AL+O3DfsAAAAABJRU5ErkJggg==',
-      'Ceiling Fan':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'Office Chair':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNgYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-      'Toyota Corolla':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEBAH/wlseKgAAAABJRU5ErkJggg==',
-      'Electric Kettle':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8//8/AwAI/AL+O3DfsAAAAABJRU5ErkJggg==',
-      'Wrist Watch':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'Headphones':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-      'Blender':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-      'Motorcycle':
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==',
-    };
-
-    const seedItems = [
-      ('seed-001', 'Instant Hotpot', 'Home Appliances', '2025-09-01', 24,
-          'Daraz'),
-      ('seed-002', 'MacBook Pro 14"', 'Electronics', '2025-12-10', 12,
-          'Apple Store'),
-      ('seed-003', 'iPhone 15', 'Electronics', '2026-01-05', 24,
-          'Apple Store'),
-      ('seed-004', 'Anker PowerBank', 'Electronics', '2026-03-15', 18,
-          'Amazon'),
-      ('seed-005', 'Ceiling Fan', 'Home Appliances', '2025-11-20', 36,
-          'Singer'),
-      ('seed-006', 'Office Chair', 'Furniture', '2026-01-20', 24, 'IKEA'),
-      ('seed-007', 'Toyota Corolla', 'Vehicle', '2025-08-15', 36, 'Toyota'),
-      ('seed-008', 'Electric Kettle', 'Home Appliances', '2025-06-20', 12,
-          'Philips'),
-      ('seed-009', 'Wrist Watch', 'Others', '2024-06-25', 24, 'Casio'),
-      ('seed-010', 'Headphones', 'Electronics', '2024-07-02', 24,
-          'Sony Center'),
-      ('seed-011', 'Blender', 'Home Appliances', '2023-01-10', 12,
-          'Nutribullet'),
-      ('seed-012', 'Motorcycle', 'Vehicle', '2021-03-01', 36, 'Honda'),
-    ];
-
-    final now = DateTime.now().toUtc().toIso8601String();
-    final products = <Product>[];
-
-    for (final (id, name, category, purchase, months, _) in seedItems) {
-      final expiryDate = calculateExpiryDate(purchase, months);
-      final imageUri = demoImages[name] ?? demoImages['Instant Hotpot']!;
-
-      products.add(
-        Product(
-          id: id,
-          productName: name,
-          brand: null,
-          category: category,
-          purchaseDate: purchase,
-          warrantyDurationMonths: months,
-          serialNumber: null,
-          modelNumber: null,
-          notes: null,
-          receipt: ReceiptFile(uri: imageUri),
-          expiryDate: expiryDate,
-          status: computeStatus(expiryDate),
-          source: ProductSource.manual,
-          createdAt: now,
-          updatedAt: now,
+  /// Sync product to local database.
+  Future<void> _syncToLocal(Product product) async {
+    final db = _localDb;
+    if (db == null) return;
+    try {
+      await db.into(db.warranties).insert(
+        WarrantiesCompanion(
+          id: Value(product.id),
+          productName: Value(product.productName),
+          category: Value(product.category),
+          purchaseDate: Value(DateTime.parse(product.purchaseDate)),
+          warrantyMonths: Value(product.warrantyDurationMonths),
+          expiryDate: Value(DateTime.parse(product.expiryDate)),
+          storeName: Value(product.shopName),
+          notes: Value(product.notes),
+          createdAt: Value(DateTime.parse(product.createdAt)),
+          updatedAt: Value(DateTime.parse(product.updatedAt)),
+        ),
+        onConflict: DoUpdate(
+          (old) => WarrantiesCompanion(
+            productName: Value(product.productName),
+            category: Value(product.category),
+            purchaseDate: Value(DateTime.parse(product.purchaseDate)),
+            warrantyMonths: Value(product.warrantyDurationMonths),
+            expiryDate: Value(DateTime.parse(product.expiryDate)),
+            storeName: Value(product.shopName),
+            notes: Value(product.notes),
+            updatedAt: Value(DateTime.parse(product.updatedAt)),
+          ),
         ),
       );
+    } catch (_) {
+      // Local sync failed - continue anyway (Firestore is source of truth)
     }
-
-    return products;
   }
+
+  /// Delete product from local database.
+  Future<void> _syncDeleteLocal(String id) async {
+    final db = _localDb;
+    if (db == null) return;
+    try {
+      await (db.delete(db.warranties)
+            ..where((t) => t.id.equals(id)))
+          .go();
+    } catch (_) {
+      // Local sync failed - continue anyway
+    }
+  }
+
 }
 
 /// Single shared instance, mirroring the old module-level service functions.

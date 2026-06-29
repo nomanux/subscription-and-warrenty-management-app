@@ -27,14 +27,14 @@ class AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAuthState = ref.watch(userAuthStateProvider);
-    final googleAccount = userAuthState.isGoogleLogin
-        ? ref.watch(googleAccountProvider).asData?.value
-        : null;
+    final googleAccountAsync = ref.watch(googleAccountProvider);
+    final googleAccount = googleAccountAsync.asData?.value;
 
-    // Get display name and email
+    // If Google account is connected, use it (regardless of isGoogleLogin flag)
+    // Otherwise fall back to local account
     final displayName =
-        googleAccount?.displayName ?? userAuthState.username ?? 'Warantee User';
-    final email = googleAccount?.email ?? userAuthState.email ?? 'Local account';
+        googleAccount?.displayName ?? userAuthState.username ?? 'Warantee';
+    final email = googleAccount?.email ?? userAuthState.email;
 
     return Drawer(
       backgroundColor: kSurface,
@@ -55,32 +55,44 @@ class AppDrawer extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Show Google photo if available, otherwise icon
-                if (googleAccount?.photoUrl?.isNotEmpty ?? false)
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundImage:
-                        NetworkImage(googleAccount!.photoUrl!),
-                  )
-                else
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white.withValues(alpha: 0.22),
-                    child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedShield01,
-                        color: Colors.white,
-                        size: 28),
+                // Show Google photo with white border, or profile avatar with initials
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
                   ),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: googleAccount?.photoUrl?.isNotEmpty == true
+                        ? Colors.transparent
+                        : Colors.white.withValues(alpha: 0.25),
+                    backgroundImage:
+                        googleAccount?.photoUrl?.isNotEmpty == true
+                            ? NetworkImage(googleAccount!.photoUrl!)
+                            : null,
+                    child: googleAccount?.photoUrl?.isNotEmpty != true
+                        ? Text(
+                            _getInitials(displayName),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Text(displayName,
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700)),
-                Text(email,
-                    style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 13)),
+                if (email != null)
+                  Text(email,
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13)),
               ],
             ),
           ),
@@ -164,6 +176,16 @@ class AppDrawer extends ConsumerWidget {
   void _go(BuildContext context, int index) {
     Navigator.pop(context);
     onNavigate(index);
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) {
+      return parts[0].substring(0, 1).toUpperCase();
+    }
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1))
+        .toUpperCase();
   }
 }
 

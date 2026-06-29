@@ -136,10 +136,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 ),
               ),
-              _FilterBar(
-                selectedFilter: selectedFilter.value,
-                onFilterChanged: (filter) =>
-                    selectedFilter.value = filter,
+              ValueListenableBuilder<WarrantyStatus?>(
+                valueListenable: selectedFilter,
+                builder: (context, currentFilter, _) {
+                  return _FilterBar(
+                    selectedFilter: currentFilter,
+                    onFilterChanged: (filter) =>
+                        selectedFilter.value = filter,
+                  );
+                },
               ),
               Expanded(
                 child: ValueListenableBuilder<WarrantyStatus?>(
@@ -255,21 +260,18 @@ class _FilterBar extends StatelessWidget {
               label: 'Active',
               isSelected: selectedFilter == WarrantyStatus.active,
               onTap: () => onFilterChanged(WarrantyStatus.active),
-              icon: '✓',
             ),
             const SizedBox(width: 8),
             _FilterChip(
               label: 'Expiring Soon',
               isSelected: selectedFilter == WarrantyStatus.expiring,
               onTap: () => onFilterChanged(WarrantyStatus.expiring),
-              icon: '⏰',
             ),
             const SizedBox(width: 8),
             _FilterChip(
               label: 'Expired',
               isSelected: selectedFilter == WarrantyStatus.expired,
               onTap: () => onFilterChanged(WarrantyStatus.expired),
-              icon: '✗',
             ),
           ],
         ),
@@ -283,41 +285,32 @@ class _FilterChip extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    this.icon,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final String? icon;
 
   @override
   Widget build(BuildContext context) {
     return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            WText(icon!, fontSize: 14),
-            const SizedBox(width: 6),
-          ],
-          Flexible(
-            child: WText(
-              label,
-              fontSize: 13,
-              color: isSelected ? Colors.white : kInk,
-              className: 'font-medium',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
+      label: WText(
+        label,
+        fontSize: 13,
+        color: isSelected ? Colors.white : kInk,
+        className: 'font-medium',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
       selected: isSelected,
       onSelected: (_) => onTap(),
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       selectedColor: kPrimary,
-      side: BorderSide(color: isSelected ? kPrimary : const Color(0xFFD1D5DB)),
+      showCheckmark: false,
+      side: BorderSide(
+        color: isSelected ? kPrimary : const Color(0xFFD1D5DB),
+        width: isSelected ? 2 : 1,
+      ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }

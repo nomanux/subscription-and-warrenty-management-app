@@ -58,6 +58,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _saving = false;
   String? _error;
   List<String> _locations = ['Home', 'Office'];
+  List<String> _brands = [];
+  late List<WarrantyCoverage> _coverages;
 
   bool get _isEdit => widget.initial != null;
 
@@ -84,7 +86,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _category = p?.category ?? kCategories.first;
     _receipt = p?.receipt;
     _productImageUri = p?.productImage?.uri;
+    _coverages = List.from(p?.coverages ?? []);
     _loadLocations(p?.location);
+    _loadBrands(p?.brand);
   }
 
   Future<void> _loadLocations([String? existingLocation]) async {
@@ -144,6 +148,72 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           FilledButton(
             onPressed: () {
               _addNewLocation(controller.text);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadBrands([String? existingBrand]) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('brands');
+    final brands = saved ?? [];
+    // Add existing brand if editing and not already in list
+    if (existingBrand != null &&
+        existingBrand.isNotEmpty &&
+        !brands.contains(existingBrand)) {
+      brands.add(existingBrand);
+    }
+    if (mounted) {
+      setState(() => _brands = brands);
+    }
+  }
+
+  Future<void> _saveBrands() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('brands', _brands);
+  }
+
+  Future<void> _addNewBrand(String brand) async {
+    if (brand.trim().isEmpty || _brands.contains(brand.trim())) return;
+    setState(() => _brands.add(brand.trim()));
+    _brand.text = brand.trim();
+    await _saveBrands();
+  }
+
+  void _showAddBrandDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add New Brand'),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'e.g., Samsung, Apple',
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: kPrimary, width: 1.5),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              _addNewBrand(controller.text);
               Navigator.pop(ctx);
             },
             child: const Text('Add'),
@@ -308,6 +378,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         visitingCard: finalVisitingCard,
         warrantyCard: finalWarrantyCard,
         productImage: finalProductImage,
+        coverages: _coverages,
       );
 
       if (_isEdit) {
@@ -360,6 +431,32 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
+  void _addCoverage() {
+    setState(() {
+      _coverages.add(
+        WarrantyCoverage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          type: 'Manufacturer Warranty',
+          duration: 1,
+          durationUnit: 'years',
+          startDate: _todayIso(),
+        ),
+      );
+    });
+  }
+
+  void _removeCoverage(int index) {
+    setState(() {
+      _coverages.removeAt(index);
+    });
+  }
+
+  void _updateCoverage(int index, WarrantyCoverage coverage) {
+    setState(() {
+      _coverages[index] = coverage;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -405,11 +502,67 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 controller: _name,
                 hint: 'e.g., Samsung Smart TV',
               ),
-              FormField(
-                label: 'Brand (optional)',
-                controller: _brand,
-                hint: 'e.g., Samsung',
+              const Text(
+                'Brand (optional)',
+                style: TextStyle(
+                  color: kInk,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 36,
+                child: StandardDropdown<String>(
+                  value: _brand.text.isEmpty ? '' : _brand.text,
+                  items: [
+                    const DropdownMenuItem(
+                      value: '',
+                      child: Text(
+                        'No brand',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
+                      ),
+                    ),
+                    ..._brands.map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: '__add__',
+                      child: Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedAdd01,
+                            color: kPrimary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Add new brand',
+                            style: TextStyle(
+                              color: kPrimary,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    if (v == '__add__') {
+                      _showAddBrandDialog();
+                    } else if (v != null) {
+                      setState(() => _brand.text = v);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
               // Category with pill/chip design
               const Text(
                 'Category *',
@@ -453,24 +606,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              StandardDropdown<String>(
-                value: _location.text.isEmpty
-                    ? _locations.first
-                    : _location.text,
-                items: [
-                  ..._locations.map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(e),
+              SizedBox(
+                height: 36,
+                child: StandardDropdown<String>(
+                  value: _location.text.isEmpty
+                      ? _locations.first
+                      : _location.text,
+                  items: [
+                    ..._locations.map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(
+                          e,
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ),
                     ),
-                  ),
-                  DropdownMenuItem(
-                    value: '__add__',
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                    DropdownMenuItem(
+                      value: '__add__',
                       child: Row(
                         children: [
                           HugeIcon(
@@ -481,20 +634,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           const SizedBox(width: 8),
                           const Text(
                             'Add new location',
-                            style: TextStyle(color: kPrimary),
+                            style: TextStyle(
+                              color: kPrimary,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-                onChanged: (v) {
+                  ],
+                  onChanged: (v) {
                   if (v == '__add__') {
                     _showAddLocationDialog();
                   } else if (v != null) {
                     setState(() => _location.text = v);
                   }
                 },
+                ),
               ),
               const SizedBox(height: 16),
               // Purchase Date
@@ -522,69 +678,73 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: TextField(
-                      controller: _duration,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 14, color: kInk),
-                      decoration: InputDecoration(
-                        hintText: '12',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        isDense: true,
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFCBD5E1),
-                            width: 1,
+              SizedBox(
+                height: 36,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: TextField(
+                        controller: _duration,
+                        keyboardType: TextInputType.number,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: const TextStyle(fontSize: 14, color: kInk),
+                        decoration: InputDecoration(
+                          hintText: '12',
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: kPrimary,
-                            width: 1.5,
+                          isDense: true,
+                          filled: true,
+                          fillColor: Colors.white,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFCBD5E1),
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: kPrimary,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 1,
-                    child: StandardDropdown<String>(
-                      value: _durationUnit,
-                      items: [
-                        DropdownMenuItem(
-                          value: 'months',
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Text('Months'),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 1,
+                      child: StandardDropdown<String>(
+                        value: _durationUnit,
+                        items: [
+                          DropdownMenuItem(
+                            value: 'months',
+                            child: Text(
+                              'Months',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'years',
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Text('Years'),
+                          DropdownMenuItem(
+                            value: 'years',
+                            child: Text(
+                              'Years',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
-                        ),
-                      ],
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _durationUnit = v);
-                        }
-                      },
+                        ],
+                        onChanged: (v) {
+                          if (v != null) {
+                            setState(() => _durationUnit = v);
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               // Expiry Date Display (Auto-calculated)
@@ -631,7 +791,192 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              // SECTION 2: Shop & Location Info
+              // SECTION 2: Warranty Coverages
+              SectionHeader(
+                icon: HugeIcons.strokeRoundedShield01,
+                title: 'Warranty Coverages',
+                subtitle: 'Add multiple warranty or guarantee coverages',
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: _addCoverage,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Coverage'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_coverages.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'No coverages added yet',
+                    style: TextStyle(
+                      color: kMuted,
+                      fontSize: 14,
+                    ),
+                  ),
+                )
+              else
+                Column(
+                  children: List.generate(_coverages.length, (i) {
+                    final coverage = _coverages[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                          borderRadius: BorderRadius.circular(6),
+                          color: Colors.white,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Coverage #${i + 1}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: kInk,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    icon: const Icon(Icons.close, size: 12),
+                                    color: const Color(0xFFDC2626),
+                                    onPressed: () => _removeCoverage(i),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            StandardDropdown<String>(
+                              value: coverage.type,
+                              items: [
+                                'Manufacturer Warranty',
+                                'Parts Warranty',
+                                'Service Warranty',
+                                'Compressor Warranty',
+                                'Motor Warranty',
+                                'Battery Warranty',
+                                'Extended Warranty',
+                                'Other',
+                              ]
+                                  .map((type) => DropdownMenuItem(
+                                        value: type,
+                                        child: Text(
+                                          type,
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null) {
+                                  _updateCoverage(
+                                    i,
+                                    coverage.copyWith(type: v),
+                                  );
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              height: 36,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: TextField(
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (v) {
+                                        final dur = int.tryParse(v) ?? 1;
+                                        _updateCoverage(
+                                          i,
+                                          coverage.copyWith(duration: dur),
+                                        );
+                                      },
+                                      controller: TextEditingController(
+                                        text: coverage.duration.toString(),
+                                      ),
+                                      textAlignVertical: TextAlignVertical.center,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: kInk,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: '0',
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        isDense: true,
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFFCBD5E1),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: const BorderSide(
+                                            color: kPrimary,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 1,
+                                    child: StandardDropdown<String>(
+                                      value: coverage.durationUnit,
+                                      items: [
+                                        'Years',
+                                        'Months',
+                                        'Days',
+                                      ]
+                                          .map((unit) => DropdownMenuItem(
+                                                value: unit.toLowerCase(),
+                                                child: Text(
+                                                  unit,
+                                                  style: const TextStyle(
+                                                      fontSize: 14),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (v) {
+                                        if (v != null) {
+                                          _updateCoverage(
+                                            i,
+                                            coverage.copyWith(durationUnit: v),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              const SizedBox(height: 28),
+              // SECTION 3: Shop & Location Info
               const SizedBox(height: 28),
               SectionHeader(
                 icon: HugeIcons.strokeRoundedBuilding03,
@@ -659,7 +1004,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 hint: 'Serial #, model, or other details...',
               ),
               const SizedBox(height: 32),
-              // SECTION 3: Photos & Documents (Always Open)
+              // SECTION 4: Photos & Documents (Always Open)
               SectionHeader(
                 icon: HugeIcons.strokeRoundedImage01,
                 title: 'Photos & Documents',
@@ -777,6 +1122,315 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CoverageDurationField extends StatefulWidget {
+  const _CoverageDurationField({
+    required this.duration,
+    required this.onChanged,
+  });
+
+  final int duration;
+  final Function(int) onChanged;
+
+  @override
+  State<_CoverageDurationField> createState() => _CoverageDurationFieldState();
+}
+
+class _CoverageDurationFieldState extends State<_CoverageDurationField> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.duration.toString());
+  }
+
+  @override
+  void didUpdateWidget(_CoverageDurationField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _controller.text = widget.duration.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      keyboardType: TextInputType.number,
+      onChanged: (v) {
+        final dur = int.tryParse(v) ?? 1;
+        widget.onChanged(dur);
+      },
+      style: const TextStyle(
+        fontSize: 11,
+        color: kInk,
+      ),
+      decoration: InputDecoration(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 6,
+          vertical: 6,
+        ),
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(
+            color: Color(0xFFCBD5E1),
+            width: 0.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(
+            color: kPrimary,
+            width: 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoverageDatePickerFieldCompact extends StatefulWidget {
+  const _CoverageDatePickerFieldCompact({
+    required this.label,
+    required this.initialDate,
+    required this.onDateChanged,
+  });
+
+  final String label;
+  final String initialDate;
+  final Function(String) onDateChanged;
+
+  @override
+  State<_CoverageDatePickerFieldCompact> createState() =>
+      _CoverageDatePickerFieldCompactState();
+}
+
+class _CoverageDatePickerFieldCompactState
+    extends State<_CoverageDatePickerFieldCompact> {
+  late TextEditingController _controller;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialDate);
+  }
+
+  @override
+  void didUpdateWidget(_CoverageDatePickerFieldCompact oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialDate != widget.initialDate) {
+      _controller.text = widget.initialDate;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final today = DateTime.now();
+    final initial = _controller.text.isNotEmpty
+        ? DateTime.tryParse(_controller.text)
+        : today;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? today,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      final iso = picked.toIso8601String().substring(0, 10);
+      _controller.text = iso;
+      widget.onDateChanged(iso);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: kMuted,
+          ),
+        ),
+        const SizedBox(height: 4),
+        GestureDetector(
+          onTap: _pickDate,
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _isFocused = true),
+            onExit: (_) => setState(() => _isFocused = false),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+                  width: _isFocused ? 1.5 : 1,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: kMuted, size: 14),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      _controller.text.isEmpty
+                          ? 'Date'
+                          : DateFormat('dd MMM').format(DateTime.parse(_controller.text)),
+                      style: TextStyle(
+                        color: _controller.text.isEmpty ? kMuted : kInk,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CoverageDatePickerField extends StatefulWidget {
+  const _CoverageDatePickerField({
+    required this.label,
+    required this.initialDate,
+    required this.onDateChanged,
+  });
+
+  final String label;
+  final String initialDate;
+  final Function(String) onDateChanged;
+
+  @override
+  State<_CoverageDatePickerField> createState() =>
+      _CoverageDatePickerFieldState();
+}
+
+class _CoverageDatePickerFieldState extends State<_CoverageDatePickerField> {
+  late TextEditingController _controller;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialDate);
+  }
+
+  @override
+  void didUpdateWidget(_CoverageDatePickerField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialDate != widget.initialDate) {
+      _controller.text = widget.initialDate;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final today = DateTime.now();
+    final initial = _controller.text.isNotEmpty
+        ? DateTime.tryParse(_controller.text)
+        : today;
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? today,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      final iso = picked.toIso8601String().substring(0, 10);
+      _controller.text = iso;
+      widget.onDateChanged(iso);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: kInk,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickDate,
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _isFocused = true),
+            onExit: (_) => setState(() => _isFocused = false),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+                  width: _isFocused ? 1.5 : 1,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, color: kMuted, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _controller.text.isEmpty
+                          ? 'Select date'
+                          : DateFormat('d MMM, yyyy')
+                              .format(DateTime.parse(_controller.text)),
+                      style: TextStyle(
+                        color: _controller.text.isEmpty ? kMuted : kInk,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios, color: kMuted, size: 14),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

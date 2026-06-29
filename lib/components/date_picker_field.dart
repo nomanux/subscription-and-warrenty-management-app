@@ -58,40 +58,43 @@ class _DatePickerFieldState extends State<DatePickerField> {
             ),
           ),
         ),
-        GestureDetector(
-          onTap: _pickDate,
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _isFocused = true),
-            onExit: (_) => setState(() => _isFocused = false),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
-                  width: _isFocused ? 1.5 : 1,
+        SizedBox(
+          height: 36,
+          child: GestureDetector(
+            onTap: _pickDate,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isFocused = true),
+              onExit: (_) => setState(() => _isFocused = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+                    width: _isFocused ? 1.5 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, color: kMuted, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.controller.text.isEmpty
-                          ? widget.hint ?? 'Select date'
-                          : DateFormat('d MMM, yyyy')
-                              .format(DateTime.parse(widget.controller.text)),
-                      style: TextStyle(
-                        color: widget.controller.text.isEmpty ? kMuted : kInk,
-                        fontSize: 14,
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: kMuted, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.controller.text.isEmpty
+                            ? widget.hint ?? 'Select date'
+                            : DateFormat('d MMM, yyyy')
+                                .format(DateTime.parse(widget.controller.text)),
+                        style: TextStyle(
+                          color: widget.controller.text.isEmpty ? kMuted : kInk,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, color: kMuted, size: 14),
-                ],
+                    const Icon(Icons.arrow_forward_ios, color: kMuted, size: 14),
+                  ],
+                ),
               ),
             ),
           ),
