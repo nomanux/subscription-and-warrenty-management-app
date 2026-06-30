@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme.dart';
 
 /// Phone input field with fixed +88 country code prefix - Material Design 3.
+/// Enforces Bangladesh phone format: 01X XXXX XXXX (11 digits max).
 class PhoneInputField extends StatefulWidget {
   const PhoneInputField({
     super.key,
     required this.label,
     required this.controller,
     this.hint = '01XXXX XXX XXXX',
+    this.hasError = false,
   });
 
   final String label;
   final TextEditingController controller;
   final String hint;
+  final bool hasError;
 
   @override
   State<PhoneInputField> createState() => _PhoneInputFieldState();
@@ -34,14 +38,34 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     String initialValue = widget.controller.text;
     if (initialValue.startsWith('+88')) {
       _phoneController = TextEditingController(
-        text: initialValue.substring(3),
+        text: _extractDigitsOnly(initialValue.substring(3)),
       );
     } else {
-      _phoneController = TextEditingController(text: initialValue);
+      _phoneController = TextEditingController(
+        text: _extractDigitsOnly(initialValue),
+      );
     }
 
     // Listen to phone controller changes and update main controller
     _phoneController.addListener(_updateMainController);
+  }
+
+  String _extractDigitsOnly(String input) {
+    return input.replaceAll(RegExp(r'\D'), '');
+  }
+
+  String _formatPhoneNumber(String digits) {
+    if (digits.isEmpty) return '';
+    // Take only first 11 digits
+    digits = digits.substring(0, digits.length > 11 ? 11 : digits.length);
+    // Format as: 01X XXXX XXXX
+    if (digits.length <= 3) {
+      return digits;
+    } else if (digits.length <= 7) {
+      return '${digits.substring(0, 3)} ${digits.substring(3)}';
+    } else {
+      return '${digits.substring(0, 3)} ${digits.substring(3, 7)} ${digits.substring(7)}';
+    }
   }
 
   void _handleFocusChange() {
@@ -49,11 +73,11 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   }
 
   void _updateMainController() {
-    final phoneNumber = _phoneController.text;
-    if (phoneNumber.isEmpty) {
-      widget.controller.text = '+88';
+    final phoneDigits = _extractDigitsOnly(_phoneController.text);
+    if (phoneDigits.isEmpty) {
+      widget.controller.text = '';
     } else {
-      widget.controller.text = '+88$phoneNumber';
+      widget.controller.text = '+88$phoneDigits';
     }
   }
 
@@ -71,24 +95,36 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            widget.label,
-            style: const TextStyle(
-              color: kInk,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+        Row(
+          children: [
+            Text(
+              widget.label,
+              style: const TextStyle(
+                color: kInk,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
+            if (widget.hasError)
+              const Text(
+                ' (Invalid format)',
+                style: TextStyle(
+                  color: Color(0xFFDC2626),
+                  fontSize: 12,
+                ),
+              ),
+          ],
         ),
+        const SizedBox(height: 8),
         SizedBox(
           height: 36,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: widget.hasError ? const Color(0xFFFEE2E2) : Colors.white,
               border: Border.all(
-                color: _isFocused ? kPrimary : const Color(0xFFCBD5E1),
+                color: widget.hasError
+                    ? const Color(0xFFDC2626)
+                    : (_isFocused ? kPrimary : const Color(0xFFCBD5E1)),
                 width: 1.0,
               ),
               borderRadius: BorderRadius.circular(8),
@@ -121,6 +157,22 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     textAlignVertical: TextAlignVertical.center,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(11),
+                    ],
+                    onChanged: (value) {
+                      final digits = _extractDigitsOnly(value);
+                      if (digits.length <= 11) {
+                        final formatted = _formatPhoneNumber(digits);
+                        if (formatted != _phoneController.text) {
+                          _phoneController.value = TextEditingValue(
+                            text: formatted,
+                            selection: TextSelection.collapsed(offset: formatted.length),
+                          );
+                        }
+                      }
+                    },
                     decoration: InputDecoration(
                       hintText: widget.hint,
                       hintStyle: const TextStyle(
@@ -151,7 +203,19 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        if (widget.hasError && _phoneController.text.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'Bangladesh phone number must be 11 digits (01X XXXX XXXX)',
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 12,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: 14),
       ],
     );
   }

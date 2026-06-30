@@ -16,6 +16,7 @@ import 'features/auth/data/google_auth_service.dart';
 import 'features/backup/services/drive_backup_service.dart';
 import 'dev/seed_local.dart';
 import 'firebase_options.dart';
+import 'helpers/dummy_data.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/profile_screen.dart';
@@ -51,6 +52,8 @@ Future<void> _initializeAppAsync() async {
     final db = AppDatabase();
     productService.setLocalDatabase(db);
     await seedLocalIfEmpty(db);
+    // Add dummy data if none exist
+    await addDummyData();
   } catch (e) {
     debugPrint('Database initialization error (non-fatal): $e');
   }

@@ -31,19 +31,32 @@ class FormField extends StatelessWidget {
     required this.controller,
     this.hint,
     this.keyboardType,
+    this.isRequired = false,
+    this.hasError = false,
   });
 
   final String label;
   final TextEditingController controller;
   final String? hint;
   final TextInputType? keyboardType;
+  final bool isRequired;
+  final bool hasError;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FieldLabel(label),
+        Row(
+          children: [
+            FieldLabel(label),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(color: Color(0xFFDC2626), fontSize: 14),
+              ),
+          ],
+        ),
         SizedBox(
           height: 36,
           child: TextField(
@@ -59,25 +72,37 @@ class FormField extends StatelessWidget {
               ),
               isDense: true,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: hasError ? const Color(0xFFFEE2E2) : Colors.white,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                  color: Color(0xFFCBD5E1),
+                borderSide: BorderSide(
+                  color: hasError ? const Color(0xFFDC2626) : const Color(0xFFCBD5E1),
                   width: 1,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(
-                  color: kPrimary,
+                borderSide: BorderSide(
+                  color: hasError ? const Color(0xFFDC2626) : kPrimary,
                   width: 1.5,
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              'This field is required',
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 12,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: 14),
       ],
     );
   }

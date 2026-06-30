@@ -60,8 +60,27 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   List<String> _locations = ['Home', 'Office'];
   List<String> _brands = [];
   late List<WarrantyCoverage> _coverages;
+  bool _showValidationErrors = false;
 
   bool get _isEdit => widget.initial != null;
+
+  bool _validateForm() {
+    final name = _name.text.trim();
+    final category = _category;
+    final purchaseDate = _purchaseDate.text.trim();
+    final duration = _duration.text.trim();
+
+    return name.isNotEmpty &&
+        category.isNotEmpty &&
+        purchaseDate.isNotEmpty &&
+        duration.isNotEmpty;
+  }
+
+  bool _isValidPhoneNumber(String phoneNumber) {
+    if (phoneNumber.isEmpty) return true;
+    final digits = phoneNumber.replaceAll(RegExp(r'\D'), '');
+    return digits.length == 11 && digits.startsWith('0');
+  }
 
   String _todayIso() => DateTime.now().toIso8601String().substring(0, 10);
 
@@ -305,16 +324,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   }
 
   Future<void> _save() async {
-    final name = _name.text.trim();
-    if (name.isEmpty) {
-      setState(() => _error = 'Please enter a product name.');
+    if (!_validateForm()) {
+      setState(() {
+        _showValidationErrors = true;
+        _error = 'Please fill in all required fields.';
+      });
       return;
     }
     setState(() {
       _saving = true;
       _error = null;
+      _showValidationErrors = false;
     });
     try {
+      final name = _name.text.trim();
       var finalReceipt = _receipt;
       if (_localImageUri != null) {
         finalReceipt = ReceiptFile(
@@ -386,7 +409,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       } else {
         await productService.createProduct(input);
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isEdit ? 'Warranty updated' : 'Warranty saved'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       setState(() {
         _saving = false;
@@ -498,9 +529,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 16),
               FormField(
-                label: 'What are you insuring? *',
+                label: 'What are you insuring?',
                 controller: _name,
                 hint: 'e.g., Samsung Smart TV',
+                isRequired: true,
+                hasError: _showValidationErrors && _name.text.trim().isEmpty,
               ),
               const Text(
                 'Brand (optional)',
@@ -894,47 +927,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                                 children: [
                                   Expanded(
                                     flex: 2,
-                                    child: TextField(
-                                      keyboardType: TextInputType.number,
+                                    child: StandardDropdown<int>(
+                                      value: coverage.duration,
+                                      items: List.generate(20, (i) => i + 1)
+                                          .map((dur) => DropdownMenuItem(
+                                                value: dur,
+                                                child: Text(
+                                                  dur.toString(),
+                                                  style: const TextStyle(fontSize: 14),
+                                                ),
+                                              ))
+                                          .toList(),
                                       onChanged: (v) {
-                                        final dur = int.tryParse(v) ?? 1;
-                                        _updateCoverage(
-                                          i,
-                                          coverage.copyWith(duration: dur),
-                                        );
+                                        if (v != null) {
+                                          _updateCoverage(
+                                            i,
+                                            coverage.copyWith(duration: v),
+                                          );
+                                        }
                                       },
-                                      controller: TextEditingController(
-                                        text: coverage.duration.toString(),
-                                      ),
-                                      textAlignVertical: TextAlignVertical.center,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: kInk,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: '0',
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        isDense: true,
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          borderSide: const BorderSide(
-                                            color: Color(0xFFCBD5E1),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          borderSide: const BorderSide(
-                                            color: kPrimary,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -984,11 +995,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 16),
               FormField(
-                label: 'Location (optional)',
-                controller: _location,
-                hint: 'e.g., Bedroom, Living Room',
-              ),
-              FormField(
                 label: 'Shop name (optional)',
                 controller: _shopName,
                 hint: 'e.g., Electronics World',
@@ -997,6 +1003,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 label: 'Shop phone (optional)',
                 controller: _shopPhoneNumber,
                 hint: '01XXXX XXX XXXX',
+                hasError: _showValidationErrors &&
+                    _shopPhoneNumber.text.isNotEmpty &&
+                    !_isValidPhoneNumber(_shopPhoneNumber.text),
               ),
               FormField(
                 label: 'Notes (optional)',

@@ -10,13 +10,6 @@ import '../theme.dart';
 import '../utils/warranty.dart';
 import './receipt_image.dart';
 
-String _rgbaClass(String prop, Color color, double opacity) {
-  final r = (color.r * 255).round();
-  final g = (color.g * 255).round();
-  final b = (color.b * 255).round();
-  return '$prop-[rgba($r,$g,$b,$opacity)]';
-}
-
 List<List<dynamic>> _categoryIcon(String category) {
   switch (category) {
     case 'Electronics':
@@ -65,27 +58,20 @@ class _ProductCardState extends State<ProductCard> {
   static const _animationDuration = Duration(milliseconds: 260);
   static const _animationCurve = Curves.easeInOutCubic;
 
-  double get _remainingFraction {
-    try {
-      final total = DateTime.parse(
-        widget.product.expiryDate,
-      ).difference(DateTime.parse(widget.product.purchaseDate)).inDays;
-      if (total <= 0) return 0;
-      final remaining = daysRemaining(widget.product.expiryDate);
-      return (remaining / total).clamp(0.0, 1.0);
-    } catch (_) {
-      return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
     final days = daysRemaining(product.expiryDate);
     final color = kStatusColors[product.status]!;
-    final pillLabel = formatWarrantyDuration(days);
+    final statusLabel = product.status == WarrantyStatus.active
+        ? 'Active'
+        : product.status == WarrantyStatus.expiring
+        ? 'Expiring Soon'
+        : 'Expired';
+    final daysText = _formatDaysRemaining(days);
+    final expiryDate = _formatDate(product.expiryDate);
     final subtitle = product.brand != null && product.brand!.isNotEmpty
-        ? '${product.brand} · ${product.category}'
+        ? '${product.category} • ${product.brand}'
         : product.category;
     final thumb = product.productImage?.uri ?? product.receipt?.thumbnailUri ?? product.receipt?.uri;
     final hasImage = thumb != null && thumb.isNotEmpty;
@@ -97,58 +83,56 @@ class _ProductCardState extends State<ProductCard> {
         child: AnimatedContainer(
           duration: _animationDuration,
           curve: _animationCurve,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
             border: widget.isExpanded
                 ? Border.all(color: kPrimary.withValues(alpha: 0.5), width: 1)
-                : Border.all(color: Colors.transparent, width: 1),
+                : Border.all(color: const Color(0xFFE5E7EB), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16),
-                child: WRow(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Product icon
                     Stack(
                       children: [
-                        WContainer(
-                          className:
-                              '${_rgbaClass('bg', kPrimary, 0.10)} rounded-[14px]',
+                        Container(
                           width: 48,
                           height: 48,
+                          decoration: BoxDecoration(
+                            color: kPrimary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           child: Center(
                             child: HugeIcon(
                               icon: _categoryIcon(product.category),
                               color: kPrimary,
-                              size: 22,
+                              size: 24,
                             ),
                           ),
                         ),
                         if (hasImage)
                           Positioned(
-                            top: -2,
-                            right: -2,
+                            top: -4,
+                            right: -4,
                             child: Container(
-                              padding: const EdgeInsets.all(3),
+                              padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 color: kPrimary,
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 2,
-                                  ),
-                                ],
                               ),
                               child: const Icon(
                                 Icons.image,
@@ -159,55 +143,126 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                       ],
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
+                    // Product info
                     Expanded(
-                      child: WColumn(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          WText(
+                          Text(
                             product.productName,
-                            color: kInk,
-                            fontSize: 15,
-                            className: 'font-bold',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: kInk,
+                            ),
                             maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 3),
-                          WText(
+                          const SizedBox(height: 2),
+                          Text(
                             subtitle,
-                            color: kMuted,
-                            fontSize: 13,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: kMuted,
+                            ),
                             maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                          if (product.shopName?.isNotEmpty ?? false) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.storefront,
+                                  size: 12,
+                                  color: kMuted,
+                                ),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    product.shopName!,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: kMuted,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (product.coverages.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Wrap(
+                                spacing: 4,
+                                runSpacing: 2,
+                                children: product.coverages
+                                    .map((coverage) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: kPrimary.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(3),
+                                          ),
+                                          child: Text(
+                                            coverage.type,
+                                            style: const TextStyle(
+                                              fontSize: 9,
+                                              color: kPrimary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // Right side: status, time, expiry
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 6,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            pillLabel,
+                            statusLabel,
                             style: TextStyle(
                               color: color,
-                              fontSize: 12,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        _ProgressBar(
-                          fraction: _remainingFraction,
-                          color: color,
+                        const SizedBox(height: 6),
+                        Text(
+                          daysText,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          'Expires on $expiryDate',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: kMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -234,6 +289,30 @@ class _ProductCardState extends State<ProductCard> {
         ),
       ),
     );
+  }
+
+  String _formatDaysRemaining(int days) {
+    if (days < 0) return 'Expired';
+    if (days == 0) return 'Today';
+    if (days == 1) return '1d left';
+    if (days < 7) return '${days}d left';
+
+    if (days < 30) {
+      final weeks = (days / 7).floor();
+      return '${weeks}w left';
+    }
+
+    final months = (days / 30).floor();
+    final remainingDays = days % 30;
+
+    if (remainingDays == 0) {
+      return '${months}m left';
+    } else if (remainingDays < 7) {
+      return '${months}m left';
+    } else {
+      final weeks = (remainingDays / 7).floor();
+      return '${months}m ${weeks}w left';
+    }
   }
 }
 
@@ -295,37 +374,6 @@ class _ExpandedDetails extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.fraction, required this.color});
-
-  final double fraction;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 5,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE5E7EB),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: FractionallySizedBox(
-          widthFactor: fraction == 0 ? 0.06 : fraction,
-          child: Container(
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-        ),
       ),
     );
   }
