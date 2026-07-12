@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "916872583271-skhld2kvm3ookf59iv7r6bp3imq9jb42.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.warrantyvault.warranty_vault",
+            "certificate_hash": "a9ab7668f1c97476cda82a51e050fe28b0949c52"
+          }
+        },
+        {
           "client_id": "916872583271-v50v7rk38qqdc1ovt08j23tpqbjb877d.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

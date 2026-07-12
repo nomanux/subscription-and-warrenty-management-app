@@ -1,5 +1,5 @@
 name: warranty_vault
-description: "A new Flutter project."
+description: "Warranty Vault - Track all your product warranties, purchase dates, and service details in one secure place. Get notifications before warranties expire."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

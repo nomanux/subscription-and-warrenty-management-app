@@ -293,7 +293,7 @@ class _SummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Warranty Summary',
+            'Product Summary',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -308,7 +308,7 @@ class _SummaryCard extends StatelessWidget {
                 centerValue: '${stats.total}',
                 centerLabel: stats.total == 0
                     ? 'Products'
-                    : (stats.total == 1 ? 'Warranty' : 'Warranties'),
+                    : (stats.total == 1 ? 'Product' : 'Products'),
                 segments: [
                   DonutSegment(
                     stats.active,
