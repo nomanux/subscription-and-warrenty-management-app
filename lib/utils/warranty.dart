@@ -53,28 +53,40 @@ WarrantyStatus computeStatus(String expiryDate, [DateTime? now]) {
 }
 
 /// Format warranty duration for badge display.
-/// Within 30 days: "X days", 30-365 days: "Xm" or "Xm Xd", beyond 365 days: "X years" or "X years X months".
+/// Within 30 days: "X days left", 30-365 days: "X mo Y days left", beyond: "X yr Y mo left".
 String formatWarrantyDuration(int days) {
   if (days < 0) return 'Expired';
-  if (days <= 30) return '$days day${days == 1 ? '' : 's'}';
+  if (days == 0) return 'Expires today';
+  if (days <= 30) return '$days day${days == 1 ? '' : 's'} left';
 
   // Greater than 30 days: show in months/years
-  if (days <= 365) {
+  if (days < 365) {
     final months = days ~/ 30;
+
+    // If months >= 12, show in years format instead
+    if (months >= 12) {
+      final years = months ~/ 12;
+      final remainingMonths = months % 12;
+      if (remainingMonths == 0) {
+        return '$years yr left';
+      }
+      return '$years yr $remainingMonths mo left';
+    }
+
     final remainingDays = days % 30;
     if (remainingDays == 0) {
-      return '${months}m';
+      return '$months mo left';
     }
-    return '${months}m ${remainingDays}d';
+    return '$months mo ${remainingDays} day${remainingDays == 1 ? '' : 's'} left';
   }
 
-  // Greater than 365 days (12 months): show in years
+  // Greater than 365 days: show in years
   final years = days ~/ 365;
   final remainingDays = days % 365;
   final remainingMonths = remainingDays ~/ 30;
 
   if (remainingMonths == 0) {
-    return '$years year${years == 1 ? '' : 's'}';
+    return '$years yr left';
   }
-  return '$years year${years == 1 ? '' : 's'} ${remainingMonths}m';
+  return '$years yr $remainingMonths mo left';
 }

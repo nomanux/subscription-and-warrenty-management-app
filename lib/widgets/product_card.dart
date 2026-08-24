@@ -291,29 +291,7 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  String _formatDaysRemaining(int days) {
-    if (days < 0) return 'Expired';
-    if (days == 0) return 'Today';
-    if (days == 1) return '1d left';
-    if (days < 7) return '${days}d left';
-
-    if (days < 30) {
-      final weeks = (days / 7).floor();
-      return '${weeks}w left';
-    }
-
-    final months = (days / 30).floor();
-    final remainingDays = days % 30;
-
-    if (remainingDays == 0) {
-      return '${months}m left';
-    } else if (remainingDays < 7) {
-      return '${months}m left';
-    } else {
-      final weeks = (remainingDays / 7).floor();
-      return '${months}m ${weeks}w left';
-    }
-  }
+  String _formatDaysRemaining(int days) => formatWarrantyDuration(days);
 }
 
 class _ExpandedDetails extends StatelessWidget {

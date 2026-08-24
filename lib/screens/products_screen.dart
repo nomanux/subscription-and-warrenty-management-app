@@ -26,6 +26,8 @@ class ProductsScreen extends StatefulWidget {
 
 class _ProductsScreenState extends State<ProductsScreen> {
   String searchQuery = '';
+  bool _isSearching = false;
+  late final FocusNode _searchFocusNode;
   late final ValueNotifier<String?> expandedProductId;
   late final ValueNotifier<WarrantyStatus?> selectedFilter;
   late TextEditingController _searchController;
@@ -35,6 +37,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
     expandedProductId = ValueNotifier<String?>(null);
     selectedFilter = ValueNotifier<WarrantyStatus?>(null);
   }
@@ -43,9 +46,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     expandedProductId.dispose();
     selectedFilter.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (_isSearching) {
+        _searchFocusNode.requestFocus();
+      } else {
+        _searchFocusNode.unfocus();
+        _searchController.clear();
+        searchQuery = '';
+      }
+    });
   }
 
   void _handleExpandProduct(Product product) {
@@ -66,15 +83,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     // Apply search filter
     if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
       filtered = filtered
           .where(
             (p) =>
-                p.productName.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ||
-                (p.brand?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-                    false) ||
-                p.category.toLowerCase().contains(searchQuery.toLowerCase()),
+                p.productName.toLowerCase().contains(query) ||
+                (p.brand?.toLowerCase().contains(query) ?? false) ||
+                p.category.toLowerCase().contains(query) ||
+                (p.serialNumber?.toLowerCase().contains(query) ?? false) ||
+                (p.modelNumber?.toLowerCase().contains(query) ?? false),
           )
           .toList();
     }
@@ -143,6 +160,78 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: _isSearching
+            ? RepaintBoundary(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: (value) {
+                      _debounceTimer?.cancel();
+                      _debounceTimer = Timer(
+                        const Duration(milliseconds: 400),
+                        () {
+                          if (mounted) setState(() => searchQuery = value);
+                        },
+                      );
+                    },
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Search warranties...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 16,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.white.withValues(alpha: 0.7),
+                        size: 20,
+                      ),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                setState(() => searchQuery = '');
+                              },
+                              child: Icon(
+                                Icons.clear,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                size: 20,
+                              ),
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 8,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : const Text('My Warranties'),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: _toggleSearch,
+            tooltip: _isSearching ? 'Close search' : 'Open search',
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showProductForm(context),
         backgroundColor: kPrimary,
@@ -176,73 +265,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Custom header
+                  // Subtitle
                   SafeArea(
+                    top: false,
                     bottom: false,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'My Warranties',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: kInk,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'All your warranties in one place',
-                            style: TextStyle(fontSize: 13, color: kMuted),
-                          ),
-                        ],
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: const Text(
+                        'All your warranties in one place',
+                        style: TextStyle(fontSize: 13, color: kMuted),
                       ),
                     ),
                   ),
-                  // Search bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        _debounceTimer?.cancel();
-                        _debounceTimer = Timer(
-                          const Duration(milliseconds: 300),
-                          () {
-                            setState(() => searchQuery = value);
-                          },
-                        );
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search by product, brand or shop...',
-                        prefixIcon: const Icon(Icons.search),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: kPrimary,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   // Filter chips with counts
                   ValueListenableBuilder<WarrantyStatus?>(
                     valueListenable: selectedFilter,
